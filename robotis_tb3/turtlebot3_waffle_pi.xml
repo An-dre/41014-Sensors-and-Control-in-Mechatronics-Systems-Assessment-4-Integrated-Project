@@ -17,8 +17,8 @@
     <!-- Wheel motor -->
     <default class="wheel">
       <joint limited="false" frictionloss="0.1" armature="0.01"/>
-      <velocity kv="0.1" ctrlrange="-7.88 7.88" ctrllimited="true"/>
-      <default class="wheel_left">
+      <velocity kv="5.0" ctrlrange="-7.88 7.88" ctrllimited="true"/> <!-- changed to 5 so wheels reach commanded speed -->
+      <default class="wheel_left"> 
         <joint axis="0 0 1"/>
       </default>
       <default class="wheel_right">
@@ -45,6 +45,11 @@
       <geom pos="-0.049 0 0.1255" mesh="lds" material="black" class="visual"/>
       <geom pos="-0.049 0 0.1255" mesh="lds" class="collision"/>
       <geom size="0.0075 0.015 0.0135" pos="0.078 0 0.107" type="box" material="grey"/>
+      <body name="lidar_mount" pos="-0.049 0 0.17">
+        <replicate count="36" euler="0 0 0.174533">
+          <site name="lidar" zaxis="1 0 0" size="0.003"/>
+        </replicate>
+      </body>
       <body name="wheel_left" pos="0 0.144 0.033" quat="0.707388 -0.706825 0 0">
         <inertial pos="0 0 0" quat="-0.000890159 0.706886 0.000889646 0.707326" mass="0.0284989" diaginertia="2.07126e-05 1.11924e-05 1.11756e-05"/>
         <joint name="wheel_left" class="wheel_left"/>
@@ -70,6 +75,43 @@
   <jointpos name="enc_right" joint="wheel_right"/>
   <jointvel name="vel_left"  joint="wheel_left"/>
   <jointvel name="vel_right" joint="wheel_right"/>
+
+  <rangefinder name="scan0" site="lidar00" cutoff="3.5"/>
+  <rangefinder name="scan1" site="lidar01" cutoff="3.5"/>
+  <rangefinder name="scan2" site="lidar02" cutoff="3.5"/>
+  <rangefinder name="scan3" site="lidar03" cutoff="3.5"/>
+  <rangefinder name="scan4" site="lidar04" cutoff="3.5"/>
+  <rangefinder name="scan5" site="lidar05" cutoff="3.5"/>
+  <rangefinder name="scan6" site="lidar06" cutoff="3.5"/>
+  <rangefinder name="scan7" site="lidar07" cutoff="3.5"/>
+  <rangefinder name="scan8" site="lidar08" cutoff="3.5"/>
+  <rangefinder name="scan9" site="lidar09" cutoff="3.5"/>
+  <rangefinder name="scan10" site="lidar10" cutoff="3.5"/>
+  <rangefinder name="scan11" site="lidar11" cutoff="3.5"/>
+  <rangefinder name="scan12" site="lidar12" cutoff="3.5"/>
+  <rangefinder name="scan13" site="lidar13" cutoff="3.5"/>
+  <rangefinder name="scan14" site="lidar14" cutoff="3.5"/>
+  <rangefinder name="scan15" site="lidar15" cutoff="3.5"/>
+  <rangefinder name="scan16" site="lidar16" cutoff="3.5"/>
+  <rangefinder name="scan17" site="lidar17" cutoff="3.5"/>
+  <rangefinder name="scan18" site="lidar18" cutoff="3.5"/>
+  <rangefinder name="scan19" site="lidar19" cutoff="3.5"/>
+  <rangefinder name="scan20" site="lidar20" cutoff="3.5"/>
+  <rangefinder name="scan21" site="lidar21" cutoff="3.5"/>
+  <rangefinder name="scan22" site="lidar22" cutoff="3.5"/>
+  <rangefinder name="scan23" site="lidar23" cutoff="3.5"/>
+  <rangefinder name="scan24" site="lidar24" cutoff="3.5"/>
+  <rangefinder name="scan25" site="lidar25" cutoff="3.5"/>
+  <rangefinder name="scan26" site="lidar26" cutoff="3.5"/>
+  <rangefinder name="scan27" site="lidar27" cutoff="3.5"/>
+  <rangefinder name="scan28" site="lidar28" cutoff="3.5"/>
+  <rangefinder name="scan29" site="lidar29" cutoff="3.5"/>
+  <rangefinder name="scan30" site="lidar30" cutoff="3.5"/>
+  <rangefinder name="scan31" site="lidar31" cutoff="3.5"/>
+  <rangefinder name="scan32" site="lidar32" cutoff="3.5"/>
+  <rangefinder name="scan33" site="lidar33" cutoff="3.5"/>
+  <rangefinder name="scan34" site="lidar34" cutoff="3.5"/>
+  <rangefinder name="scan35" site="lidar35" cutoff="3.5"/>
 </sensor>
 
   <contact>
