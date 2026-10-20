@@ -45,11 +45,15 @@
       <geom pos="-0.049 0 0.1255" mesh="lds" material="black" class="visual"/>
       <geom pos="-0.049 0 0.1255" mesh="lds" class="collision"/>
       <geom size="0.0075 0.015 0.0135" pos="0.078 0 0.107" type="box" material="grey"/>
+
       <body name="lidar_mount" pos="-0.049 0 0.17">
-        <replicate count="36" euler="0 0 0.174533">
-          <site name="lidar" zaxis="1 0 0" size="0.003"/>
+        <replicate count="36" euler="0 0 0.174533"> <!-- copy beam 36 times and rotate about 360/36=10 -->
+          <site name="lidar" zaxis="1 0 0" size="0.003"/> <!-- beam that points along x axis  -->
         </replicate>
       </body>
+
+      <camera name='rgb' pos="0.07 0 0.15" xyaxes="0 -1 0 0 0 1" fovy="60"/> <!--RGB camera pointing in front of robot (x axis)-->
+      
       <body name="wheel_left" pos="0 0.144 0.033" quat="0.707388 -0.706825 0 0">
         <inertial pos="0 0 0" quat="-0.000890159 0.706886 0.000889646 0.707326" mass="0.0284989" diaginertia="2.07126e-05 1.11924e-05 1.11756e-05"/>
         <joint name="wheel_left" class="wheel_left"/>
@@ -71,9 +75,10 @@
   </actuator>
   
   <sensor>
-  <jointpos name="enc_left"  joint="wheel_left"/>
+  <jointpos name="enc_left"  joint="wheel_left"/> <!-- encoders to read the left and right wheel -->
   <jointpos name="enc_right" joint="wheel_right"/>
-  <jointvel name="vel_left"  joint="wheel_left"/>
+
+  <jointvel name="vel_left"  joint="wheel_left"/> <!-- how fast each wheel moving -->
   <jointvel name="vel_right" joint="wheel_right"/>
 
   <rangefinder name="scan0" site="lidar00" cutoff="3.5"/>

@@ -14,6 +14,8 @@
     <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
       markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <texture name="aruco_tex" type="2d" file="aruco_0.png"/>
+    <material name="aruco_mat" texture="aruco_tex" emission="1"/>
   </asset>
 
   <worldbody>
@@ -28,6 +30,6 @@
     <geom name="box3" type="box" size="0.2 0.2 0.2" pos="-1.6 -2.5 0.2" rgba="0.2 0.8 0.3 1"/>
     <geom name="box4" type="box" size="0.2 0.2 0.2" pos="-0.6 -0.5 0.2" rgba="1.0 0.8 0.1 1"/>
     <geom name="dock" type="box" size="0.03 0.15 0.15" pos="2.92 0 0.15" rgba="0.2 0.2 0.25 1"/>
-    <geom name="dock_marker" type="box" size="0.002 0.1 0.1" pos="2.888 0 0.15" rgba="0 0.8 0 1"/>
+    <geom name="dock_marker" type="box" size="0.002 0.1 0.1" pos="2.888 0 0.15" material="aruco_mat"/>
   </worldbody>
 </mujoco>
