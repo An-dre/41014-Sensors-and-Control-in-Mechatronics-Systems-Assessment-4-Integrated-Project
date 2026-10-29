@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 from spatialmath import SE2
 
+
 model_path = Path(__file__).parent / "sceneforturtle.xml"
 model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)

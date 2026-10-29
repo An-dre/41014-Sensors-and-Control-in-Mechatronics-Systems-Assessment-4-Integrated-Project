@@ -4,11 +4,12 @@
 #
 # State   x = [x, y, theta]   position in the world frame (m) and heading (rad)
 # Input   u = [v, omega]      forward speed (m/s) and turn rate (rad/s)
-# Robot numbers come from robot/tb3_waffle_pi_sensors.xml:
+# Robot numbers come from robotis_tb3/turtlebot3_waffle_pi.xml:
 
 import numpy as np
 
-r = 0.033      # wheel radius (m)
+
+r = 0.033      # wheel radius m verified in the STL file
 L = 0.288      # wheel separation (m), wheels at y = +0.144 and y = -0.144
 W_MAX = 7.88   # max wheel speed (rad/s)
 
@@ -19,16 +20,16 @@ W_MAX = 7.88   # max wheel speed (rad/s)
 #     v     = r * (w_right + w_left) / 2
 #     omega = r * (w_right - w_left) / L
 def wheels_to_body(w_left, w_right):
-    v = None       # TODO A1
-    omega = None   # TODO A1
+    v = r * (w_right + w_left) /2       
+    omega = r * (w_right - w_left) /L     
     return v, omega
 
 
 def body_to_wheels(v, omega):
     # the inverse of the above. Solve the two equations for w_left and w_right.
     # The controller needs this to turn (v, omega) into wheel commands.
-    w_left = None    # TODO A1
-    w_right = None   # TODO A1
+    w_left = (v - (omega * L) /2 ) / r   
+    w_right = (v + (omega * L) /2) / r
     return w_left, w_right
 
 
@@ -93,8 +94,12 @@ def jacobian_G(x, u, dt):
 # Sanity check on the signs: if the robot is behind the reference, e_x > 0, and a
 # positive dv must make e_x shrink. B[0,0] = -dt does exactly that.
 def linear_error_model(v_ref, omega_ref, dt):
-    A = None   # TODO A4
-    B = None   # TODO A4
+    A = np.array([[ 1,            omega_ref*dt,  0        ],
+          [-omega_ref*dt, 1,             v_ref*dt ],
+          [ 0,            0,             1        ]])
+    B = np.array([[-dt,  0  ],
+          [ 0,   0  ],
+          [ 0,  -dt ]]) 
     return A, B
 
 
@@ -107,16 +112,17 @@ def linear_error_model(v_ref, omega_ref, dt):
 #   * C for "encoders only" (nothing measures x,y,theta directly -> what rank?)
 #   * C = H (the measurement Jacobian from ekf.py) for range+bearing to the marker
 def controllability_matrix(A, B):
-    # TODO A5
-    return None
+    Ctrb = np.hstack([B, A @ B, A @ A @ B])
+    return Ctrb
 
 
 def observability_matrix(A, C):
-    # TODO A5
-    return None
+    Obsv = np.vstack([C, C @ A, C @ A @ A])
+    return Obsv
 
 
 if __name__ == "__main__":
+    import ekf
     # self-checks: run  python model.py
     print("wheels_to_body(5, 5) ->", wheels_to_body(5.0, 5.0), " expect v=0.165, omega=0")
     print("wheels_to_body(-5, 5) ->", wheels_to_body(-5.0, 5.0), " expect v=0, omega=1.146")
@@ -128,3 +134,34 @@ if __name__ == "__main__":
         print("rank Ctrb, v_ref=0.2 ->", np.linalg.matrix_rank(controllability_matrix(A, B)), " expect 3")
         A0, B0 = linear_error_model(0.0, 0.0, 0.02)
         print("rank Ctrb, v_ref=0   ->", np.linalg.matrix_rank(controllability_matrix(A0, B0)), " expect 2")
+        
+        
+        m = np.array([2.888, 0.0])   # dock marker position from sceneforturtle.xml
+        x_test = np.array([0.0, 0.0, 0.0])
+
+        # robot moving forward at 0.2 m/s
+        F_move = jacobian_F(x_test, np.array([0.2, 0.0]), 0.02)
+        
+        # robot parked
+        F_park = jacobian_F(x_test, np.array([0.0, 0.0]), 0.02)
+
+        C_none = np.zeros((1, 3))           # encoders only, nothing measures x, y, theta
+        C_pose = np.eye(3)                  # camera gives x, y, theta directly
+        C_rb = ekf.jacobian_H(x_test, m)    # camera gives range + bearing to the marker
+
+        print("rank Obsv, encoders only        ->", np.linalg.matrix_rank(observability_matrix(F_move, C_none)), " expect 0")
+        print("rank Obsv, full pose            ->", np.linalg.matrix_rank(observability_matrix(F_move, C_pose)), " expect 3")
+        
+        x0 = np.array([0.0, 0.3, 0.2])      # start pose, not lined up with the marker
+        for u_try in [np.array([0.2, 0.0]), np.array([0.2, 0.5]), np.array([0.0, 0.5])]:
+            x1 = f(x0, u_try, 0.02)
+            x2 = f(x1, u_try, 0.02)
+            F0 = jacobian_F(x0, u_try, 0.02)
+            F1 = jacobian_F(x1, u_try, 0.02)
+
+            H0 = ekf.jacobian_H(x0, m)
+            H1 = ekf.jacobian_H(x1, m)
+            H2 = ekf.jacobian_H(x2, m)
+
+            Obsv_traj = np.vstack([H0, H1 @ F0, H2 @ F1 @ F0])
+            print("rank Obsv, range+bearing along path, u =", u_try, "->", np.linalg.matrix_rank(Obsv_traj), " expect 2")     
