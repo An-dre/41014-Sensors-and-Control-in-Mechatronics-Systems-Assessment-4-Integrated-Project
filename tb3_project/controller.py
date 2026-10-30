@@ -12,11 +12,11 @@
 #   4. u = u_ref - K e   (feedforward drives the plan, feedback fixes the error)
 #   5. if either wheel would pass its speed limit, slow both by the same factor
 #
-# Quick check, no simulator:   python tb3_project\controller.py
 # Unit checks:                 python -m unittest discover -s tb3_project -p test_controller.py -v
 
 import numpy as np
-from model import r, L, W_MAX
+from scipy.linalg import solve_discrete_are
+from model import r, L, W_MAX, linear_error_model, body_to_wheels
 
 DT = 0.02                    # control period (s), matches the EKF's Q
 V_MAX = r * W_MAX            # 0.26 m/s with both wheels flat out
@@ -30,16 +30,9 @@ def wrap(a):
 
 
 # --- D1. tracking error and its linear model ---------------------------------------
-# Same model and sign convention as A4 in model.py. I keep my own copy so Part D runs
-# before A4 is filled in. test_controller.py checks the two agree once it is.
+# Use Part A's model so control shares the group's robot definition.
 def error_model(v_ref, w_ref, dt=DT):
-    A = np.array([[1.0,         w_ref * dt, 0.0],
-                  [-w_ref * dt, 1.0,        v_ref * dt],
-                  [0.0,         0.0,        1.0]])
-    B = np.array([[-dt, 0.0],
-                  [0.0, 0.0],
-                  [0.0, -dt]])
-    return A, B
+    return linear_error_model(v_ref, w_ref, dt)
 
 
 def tracking_error(x_hat, pose_ref):
@@ -57,22 +50,9 @@ def controllability_matrix(A, B):
 
 
 # --- D2. discrete LQR --------------------------------------------------------------
-# Week 6: solve the discrete Riccati equation for P, then K = (R + B'PB)^-1 B'PA.
-# The control law is du = -K e. scipy does the Riccati solve. If scipy isn't there
-# (say on the robot's Pi) I just iterate the Riccati equation until P stops changing.
+# Week 6: solve the discrete Riccati equation, then apply du = -K e.
 def dlqr(A, B, Q, R):
-    try:
-        from scipy.linalg import solve_discrete_are
-        P = solve_discrete_are(A, B, Q, R)
-    except ImportError:
-        P = Q.copy()
-        for _ in range(100000):
-            BtP = B.T @ P
-            P_new = Q + A.T @ P @ A - A.T @ P @ B @ np.linalg.solve(R + BtP @ B, BtP @ A)
-            if np.max(np.abs(P_new - P)) < 1e-10 * np.max(np.abs(P_new)):
-                P = P_new
-                break
-            P = P_new
+    P = solve_discrete_are(A, B, Q, R)
     K = np.linalg.solve(R + B.T @ P @ B, B.T @ P @ A)
     return K, P
 
@@ -288,8 +268,7 @@ def docking_reference(route, marker_xy, normal_xy, **kwargs):
 # That keeps the ratio v / w, so the robot stays on the curve it was asked for and just
 # goes slower, instead of turning less than it should (which clipping one wheel does).
 def wheel_speeds(v, w):
-    w_left = (v - w * L / 2) / r
-    w_right = (v + w * L / 2) / r
+    w_left, w_right = body_to_wheels(v, w)
     biggest = max(abs(w_left), abs(w_right))
     scale = 1.0 if biggest <= WHEEL_LIMIT else WHEEL_LIMIT / biggest
     return w_left * scale, w_right * scale, scale
@@ -365,8 +344,10 @@ class LQRTracker:
             w = float(du[1])
             inside = abs(e[0]) < DOCK_TOL_X and abs(e[2]) < DOCK_TOL_TH
             self.t_in_tol = self.t_in_tol + self.dt if inside else 0.0
-            if self.t_in_tol >= DOCK_HOLD or t - self.t_settle > SETTLE_TIMEOUT:
+            if self.t_in_tol >= DOCK_HOLD:
                 self.mode = "docked"
+            elif t - self.t_settle > SETTLE_TIMEOUT:
+                self.mode = "timeout"
             else:
                 return self._finish(v, w, e, 0.0, 0.0, t)
 
@@ -379,32 +360,3 @@ class LQRTracker:
         self.last = dict(t=t, mode=self.mode, e=e.copy(), v_ref=v_ref, w_ref=w_ref,
                          v=v, w=w, scale=scale)
         return v, w
-
-
-if __name__ == "__main__":
-    np.set_printoptions(precision=4, suppress=True)
-    print(f"top speed {V_MAX:.3f} m/s, wheel limit used {WHEEL_LIMIT:.2f} rad/s")
-
-    for v_ref in (0.0, 0.15):
-        A, B = error_model(v_ref, 0.0)
-        print(f"rank Ctrb at v_ref = {v_ref:.2f}:", np.linalg.matrix_rank(controllability_matrix(A, B)))
-
-    for v_ref, w_ref in ((0.05, 0.0), (0.15, 0.0), (0.12, 0.46)):
-        A, B = error_model(v_ref, w_ref)
-        K, _ = dlqr(A, B, Q_LQR, R_LQR)
-        z = np.linalg.eigvals(A - B @ K)
-        print(f"v_ref {v_ref:.2f}, w_ref {w_ref:.2f}: K =\n{K}\n   |eig(A - BK)| = {np.abs(z)}")
-        assert np.all(np.abs(z) < 1)
-
-    # drive the LINEAR error model from a 10 cm sideways, 5 deg heading error
-    A, B = error_model(0.15, 0.0)
-    K, _ = dlqr(A, B, Q_LQR, R_LQR)
-    e = np.array([0.0, 0.10, np.radians(5)])
-    for k in range(int(10 / DT)):
-        e = A @ e + B @ (-K @ e)
-    print("error after 10 s on the linear model:", e, " should be ~0")
-
-    ref = docking_reference([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]], [2.888, 0.0], [-1.0, 0.0])
-    print(f"test reference: {ref.length:.2f} m in {ref.duration:.1f} s,"
-          f" top speed {ref.v.max():.3f} m/s, top turn rate {np.abs(ref.w).max():.3f} rad/s")
-    print("Basic checks passed.")

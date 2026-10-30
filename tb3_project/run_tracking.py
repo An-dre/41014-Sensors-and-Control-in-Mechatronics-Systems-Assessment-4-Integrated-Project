@@ -222,35 +222,12 @@ def rendered_marker(image):
 
 
 # --- plants ------------------------------------------------------------------------
-CHASSIS_CLEARANCE = 0.002   # m, how far I lift the chassis collision shape off the floor
 
 
 def fix_floor_contacts(model, mujoco):
-    # --check-sim showed the Waffle Pi in the scene slips badly: the wheels say 0.52 m and
-    # it only moves 0.44 m (15 %), and spins turn 30 % less than the wheels say. Left like
-    # that, only 1 of 90 closed-loop trials docks. Two causes, both in the ROBOTIS menagerie
-    # model (the group's xml didn't add them):
-    #   * the chassis collision shape (the convex hull of the base mesh) sits 0.1 mm below
-    #     the floor, so it carries a third of the robot's weight and drags with friction 1
-    #   * the caster balls are meant to be frictionless (condim 1), but MuJoCo uses the
-    #     bigger friction and condim of the two touching geoms, so the floor's friction wins
-    # Fix: give the casters priority (so their own frictionless contact is used) and lift
-    # the chassis hull CHASSIS_CLEARANCE clear, so only the wheels and casters touch the
-    # floor. Slip goes to under 1 %. This changes the loaded model only, not the xml file.
-    base = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "base")
-    for g in range(model.ngeom):
-        if model.geom_bodyid[g] != base:
-            continue
-        if model.geom_type[g] == mujoco.mjtGeom.mjGEOM_SPHERE and model.geom_condim[g] == 1:
-            model.geom_priority[g] = 1
-        if model.geom_type[g] == mujoco.mjtGeom.mjGEOM_MESH and model.geom_contype[g] \
-                and mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_MESH, model.geom_dataid[g]) == "waffle_pi_base":
-            first = model.mesh_vertadr[model.geom_dataid[g]]
-            verts = model.mesh_vert[first:first + model.mesh_vertnum[model.geom_dataid[g]]]
-            rot = np.zeros(9)
-            mujoco.mju_quat2Mat(rot, model.geom_quat[g])
-            lowest = (verts @ rot.reshape(3, 3).T)[:, 2].min() + model.geom_pos[g][2]
-            model.geom_pos[g][2] += max(0.0, CHASSIS_CLEARANCE - lowest)
+    # Keep the old test bench API, using the same correction as the pipeline.
+    from sim import fix_floor_contacts as correct_contacts
+    correct_contacts(model, mujoco)
 
 
 class MujocoTB3:
@@ -410,7 +387,7 @@ def run(route_name, plant, seed=0, start_error=True, scheduled=True, feedforward
         if gap <= 0.0:
             collided = True
             break
-        if tracker.docked:
+        if tracker.docked or tracker.mode == "timeout":
             break
 
         # 5. send the wheel speeds and step the physics
