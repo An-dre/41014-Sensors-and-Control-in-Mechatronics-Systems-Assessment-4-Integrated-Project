@@ -8,7 +8,7 @@ runs and nothing else, and section 2.9 shows how that's checked.
 | file in `tb3_project/` | what it is |
 |---|---|
 | `controller.py` | the controller: error model, LQR, gain schedule, reference trajectory, docking, wheel limits |
-| `test_controller.py` | 22 unit checks: maths, logic, limits, the MuJoCo scene, and the ground-truth checks |
+| `test_controller.py` | 12 core checks: maths, logic, limits, the MuJoCo scene, and the ground-truth checks |
 | `run_tracking.py` | closed-loop test bench in MuJoCo (or a fast stand-in): repeated trials, comparisons, plots |
 | `results_part_d/` | everything `run_tracking.py` writes: plots, `.md` tables, `.csv` per trial |
 
@@ -302,14 +302,8 @@ those into x̂, and `LQRTracker.step` takes only x̂ and the time.
    with the simulator's `truth()` swapped for one that only returns NaN. Every wheel command
    comes out bit-for-bit the same. In MuJoCo with the rendered camera, where nothing in the loop
    needs the pose at all so I blank the simulator's own `_pose()` too: 2135, 2550 and 2227
-   steps on the three routes, all identical. The unit tests repeat it with the fake camera in
-   MuJoCo and on the stand-in.
-2. **The check can fail.** A unit test cheats on purpose (hands the controller the true pose
-   instead of the estimate), and the leak check catches it.
-3. **The controller can't see the simulator.** A unit test parses `controller.py` and checks it
-   only imports numpy, scipy and `model.py`, never names the simulator or the true pose, and
-   that `LQRTracker.step` only takes the estimate and the time.
-4. **The slipping robot shows it from the other side** (section 3.1). With the robot exactly as
+   steps on the three routes, all identical. The core test repeats it with the fake camera in MuJoCo.
+2. **The slipping robot shows it from the other side** (section 3.1). With the robot exactly as
    the xml says, the controller kept its estimate on the plan (1.3 cm RMS on average) while the
    real robot drifted as far as 2.85 m, and in 84 of 90 runs it stopped and called itself
    docked. A controller that could see the true pose would have steered back.
