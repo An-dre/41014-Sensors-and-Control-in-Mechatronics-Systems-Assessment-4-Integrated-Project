@@ -1,0 +1,71 @@
+{
+  "success": true,
+  "status": "docked",
+  "collided": false,
+  "time": 67.52,
+  "odometry_position_rmse": 0.14207802651308368,
+  "cross_track_rmse": 0.04403732361121024,
+  "wheel_command_rms": 3.1233400488804732,
+  "dock_along": 0.002110025146340783,
+  "dock_side": -0.0004748162657753073,
+  "dock_heading_deg": 0.5188840747688943,
+  "ekf_position_rmse": 0.04434830588216664,
+  "heading_rmse_deg": 1.0036557029983078,
+  "mean_nees": 2.472269349838253,
+  "coverage_x": 0.7719869706840391,
+  "coverage_y": 1.0,
+  "coverage_heading": 1.0,
+  "mean_nis_all": 0.23588786830972985,
+  "seed": 10,
+  "start": "north",
+  "replans": 9,
+  "camera_accepted": 410,
+  "camera_rejected": 3,
+  "camera_invalid": 0,
+  "calibrated": false,
+  "wheel_gain": [
+    1.0,
+    1.0
+  ],
+  "camera_dropout": [
+    -1.0,
+    -1.0
+  ],
+  "placement_noise": true,
+  "sensor_rejects": {
+    "wrong_id": 0,
+    "too_small": 56,
+    "pnp_failed": 0,
+    "bad_range": 0
+  },
+  "q_scale": 1.0,
+  "r_scale": 1.0,
+  "Q": [
+    [
+      1e-06,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1e-06,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.2184696791468344e-05
+    ]
+  ],
+  "R": [
+    [
+      0.0009,
+      0.0
+    ],
+    [
+      0.0,
+      0.00030461741978670857
+    ]
+  ],
+  "measurement_noise_source": "simulation design prior"
+}

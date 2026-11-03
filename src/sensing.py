@@ -1,13 +1,12 @@
-# sensing.py - PART B (20 marks). Owners: Person 1 (encoders, lidar) and Person 2 (camera, ArUco, frames).
-# Turns raw simulator numbers into the measurements the EKF uses, with realistic
-# noise added and every frame change written down. Fill in every TODO.
-
 import model
 import numpy as np
 import cv2
 import sim
+import sys
+import mujoco
+from pathlib import Path
 
-# --- B1. encoder noise ----------------------------------------------
+# B1: encoder noise 
 # A real encoder gives integer ticks. The TB3's Dynamixel gives 4096 ticks per turn.
 # Steps: angle -> ticks (round to an integer) -> back to an angle, plus a small
 # Gaussian noise (slip, backlash). Decide the noise size and WRITE WHY on the page.
@@ -21,8 +20,8 @@ def noisy_encoders(enc_left, enc_right):
     # Converts the left wheel angle into a whole number of ticks
     left_ticks = np.round(enc_left / TICK)
     # Converts back to radians and adds a small random error
-       # np.random.normal picks a random number from a bell curve. 0 means it’s centred on zero, 
-       # no bias, equally likely to be + or −
+    # np.random.normal picks a random number from a bell curve. 0 means it’s centred on zero,
+    # no bias, equally likely to be + or −
     left = left_ticks * TICK + np.random.normal(0, ENC_NOISE_RAD)
 
     right_ticks = np.round(enc_right / TICK)
@@ -34,8 +33,8 @@ def noisy_encoders(enc_left, enc_right):
 # This (v, omega) is the EKF's input u, so it carries the encoder noise with it.
 
 # odometry takes 3 inputs: the current and previous encoder readings (in radians) and the time step dt (0.02s).
-# enc_now: the wheel angles this loop, as a pair [left (0), right (1)] → [1.08, 1.12]
-# enc_prev: the wheel angles last loop → [1.00, 1.00]
+# enc_now: the wheel angles this loop, as a pair [left (0), right (1)] -> [1.08, 1.12]
+# enc_prev: the wheel angles last loop -> [1.00, 1.00]
 def odometry(enc_now, enc_prev, dt):
     # Works out how fast the left wheel is spinning
     w_left = (enc_now[0] - enc_prev[0]) / dt
@@ -47,7 +46,7 @@ def odometry(enc_now, enc_prev, dt):
     return np.array([v, omega])
    
 
-# --- B2. lidar noise --------------------------------------------------
+# B2: lidar noise 
 # The LDS-01 datasheet quotes +-15 mm accuracy for 0.12-0.5 m and +-5 % for 0.5-3.5 m.
 # Turn that into a std that grows with range, and say how you converted it.
 # Also replace "-1" (no return) with the max range so the planner treats it as free space.
@@ -71,7 +70,7 @@ def noisy_lidar(ranges):
     r[no_return] = LIDAR_MAX
     return r
 
-# --- B3. camera model -------------------------------------------------
+# B3: camera model
 # The sim camera is a pinhole with a vertical field of view fovy. From the image
 # geometry, focal length in pixels is
 #     f = (H / 2) / tan(fovy / 2)
@@ -86,38 +85,39 @@ def camera_matrix():
                   [0, 0, 1]])
     return K
 
-# --- B4. calibration --------------------------------------------------
-# There is a chessboard on the +y wall (scene_room.xml, "calib_board"): 8 x 6 squares
-# of 0.1 m, so 7 x 5 inner corners. Drive the robot to 10-15 different spots facing it,
-# take a photo at each (sim.read_camera), then:
-#     ok, corners = cv2.findChessboardCorners(gray, (7, 5))
-#     cv2.calibrateCamera(object_points_list, image_points_list, (W, H), None, None)
-# Compare the K you get with camera_matrix(). Save it to a file and load it in detect_marker.
+# B4: calibration
+# sceneforturtle.xml has no chessboard, so B4 uses calib_scene.xml: the same robot and
+# camera plus an 8 x 6 board of 0.1 m squares (7 x 5 inner corners) at (2.0, 0, 0.35).
+# K belongs to the camera, not the room, so the result is valid for the real scene.
+# Run:  python sensing.py calib   -> prints calibrated vs true K, saves calib.npz
 
-CHESS_PATTERN = (7, 5)    # inner corners (8 x 6 squares)
-CHESS_SQUARE = 0.1        # square size in metres
-WALL_Y = 2.0              # the +y wall of the 5 x 4 m room
-BOARD_X = 0.0             # CHECK: x of "calib_board" in scene_room.xml
- 
-def collect_calibration_images(board_x=BOARD_X):
-    # Drive (teleport) the robot to several spots facing the board and take a photo at each.
-    mj_model, data = sim.load()
-    renderer, opt = sim.make_renderer(mj_model)
+CHESS_PATTERN = (7, 5)                                     # inner corners (8 x 6 squares)
+CHESS_SQUARE = 0.1                                         # square size in metres
+CALIB_SCENE = Path(__file__).resolve().parent.parent / "robotis_tb3" / "calib_scene.xml"    # robot + chessboard    # robot + chessboard
+BOARD_CENTRE = np.array([2.0, 0.0])                        # board centre on the floor plane
+
+
+def collect_calibration_images():
+    # Park the robot at 27 spots facing the board: 3 distances x 3 sideways x 3 turns
+    m = mujoco.MjModel.from_xml_path(str(CALIB_SCENE))
+    d = mujoco.MjData(m)
+    renderer, opt = sim.make_renderer(m)
     images = []
-    for dx in (-0.3, 0.0, 0.3):              # left / centre / right of the board
-        for y in (0.2, 0.8):                 # two distances from the wall
-            for dth in (-0.15, 0.0, 0.15):   # turn a little left / straight / right (rad)
-                x = board_x + dx
-                theta = np.arctan2(WALL_Y - y, board_x - x) + dth   # aim at the board
-                sim.set_pose(mj_model, data, x, y, theta)
-                images.append(sim.read_camera(renderer, opt, data))
+    for dist_ in (1.0, 1.25, 1.5):                 # metres from the board
+        for side in (-0.35, 0.0, 0.35):            # left / centre / right of the board
+            for dth in (-0.25, 0.0, 0.25):         # turn a little left / straight / right (rad)
+                x, y = BOARD_CENTRE[0] - dist_, BOARD_CENTRE[1] + side
+                theta = np.arctan2(BOARD_CENTRE[1] - y, BOARD_CENTRE[0] - x) + dth
+                sim.set_pose(m, d, x, y, theta)
+                images.append(sim.read_camera(renderer, opt, d))
     return images
- 
+
+
 def calibrate(images):
     # 3D corner positions on the board itself (z = 0, flat), in metres: (0,0), (0.1,0), ...
     objp = np.zeros((CHESS_PATTERN[0] * CHESS_PATTERN[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:CHESS_PATTERN[0], 0:CHESS_PATTERN[1]].T.reshape(-1, 2) * CHESS_SQUARE
- 
+
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     obj_points, img_points = [], []
     for img in images:
@@ -128,37 +128,34 @@ def calibrate(images):
         corners = cv2.cornerSubPix(gray, corners, (5, 5), (-1, -1), criteria)   # refine to sub-pixel
         obj_points.append(objp)
         img_points.append(corners)
- 
+
     if len(obj_points) < 3:
         print("calibrate: only", len(obj_points), "usable photos - check the board is in view")
         return None
- 
+
     H, W = images[0].shape[:2]
     rms, K, dist, _, _ = cv2.calibrateCamera(obj_points, img_points, (W, H), None, None)
     return K, dist, rms, len(obj_points)
 
-    
-# --- B5. ArUco detection and pose (Person 2) -------------------------------------
-# Marker: DICT_4X4_50, id 0, side 0.2 m, on the dock facing -x (see scene_room.xml).
-# Steps:
-#   1. gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-#   2. detector = cv2.aruco.ArucoDetector(cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50))
-#      corners, ids, _ = detector.detectMarkers(gray)      -> ids is None if nothing seen
-#   3. cv2.solvePnP(marker_corners_3d, corners[0][0], K, dist)  -> rvec, tvec
-#      marker_corners_3d: the 4 corners in the MARKER frame, same order OpenCV gives
-#      them (top-left, top-right, bottom-right, bottom-left), z = 0.
-#   tvec is the marker centre in the OPENCV camera frame: x right, y down, z forward.
-# Things that WILL bite you (all seen in testing):
-#   * check np.ravel(ids)[0] == 0; ignore anything else (ids has a different shape in OpenCV 4 vs 5)
-#   * a marker only ~25 px wide (3.5 m away) occasionally gives a garbage pose
-#     (one frame read 10.7 m in a 5 m room). Reject tiny detections and impossible
-#     ranges here, AND gate the innovation in the EKF. Write down both thresholds.
-#   * cv2.SOLVEPNP_IPPE_SQUARE is the solver meant for square markers
-#   * the range error grows with distance (about 1 cm at 1 m, 3 cm at 3 m here), so
-#     R in the EKF can be a function of range rather than one number
+
+def run_calibration():
+    out = calibrate(collect_calibration_images())
+    if out is None:
+        return
+    K_cal, dist, rms, n = out
+    print(f"used {n} photos, reprojection error {rms:.3f} px")
+    print("true K:\n", camera_matrix())
+    print("calibrated K:\n", np.round(K_cal, 2))
+    np.savez(Path(__file__).parent / "calib.npz", K=K_cal, dist=dist)
+
+
+# B5: ArUco detection and pose
+# Finds marker id 0 (DICT_4X4_50) and uses solvePnP (IPPE_SQUARE) to get its
+# position in the OpenCV camera frame (x right, y down, z forward).
+# Rejects wrong id, tiny markers (< MIN_SIDE_PX), and impossible ranges.
 MARKER_SIZE = 0.2
 MARKER_ID = 0
-MIN_SIDE_PX = 30      # reject markers smaller than this in the image (~2.8 m away)
+MIN_SIDE_PX = 30      # reject markers smaller than this in the image (~2.2 m away for the 0.16 m marker)
 MAX_RANGE = 3.5       # reject poses further than this (impossible given MIN_SIDE_PX)
  
 # The 4 marker corners in the MARKER frame (centre at 0, flat so z = 0), in the order
@@ -179,7 +176,7 @@ REJECTS = {"wrong_id": 0, "too_small": 0, "pnp_failed": 0, "bad_range": 0}
 def load_calibration():
     # Use the calibrated K from B4 if it exists, otherwise the true K from B3
     try:
-        c = np.load("calib.npz")
+        c = np.load(Path(__file__).parent / "calib.npz")
         return c["K"], c["dist"]
     except FileNotFoundError:
         return camera_matrix(), None
@@ -222,22 +219,15 @@ def detect_marker(img, K, dist=None):
     rvec = rvec.ravel()
  
     # 6. range check: must be in front of the camera (z > 0) and not impossibly far
-    if tvec[2] <= 0 or np.linalg.norm(tvec) > MAX_RANGE:
+    if not np.all(np.isfinite(tvec)) or tvec[2] <= 0 or np.linalg.norm(tvec) > MAX_RANGE:
         REJECTS["bad_range"] += 1
         return False, None, None
  
     return True, tvec, rvec
 
-# --- B6. frames: camera -> robot base, then range and bearing (Person 2) ---------
-# Three frames are involved. Put all three on the frame diagram.
-#   OpenCV camera frame : x right, y down, z forward (what solvePnP returns)
-#   MuJoCo camera frame : x right, y UP, looks along -z   (only matters if you read
-#                         the camera pose out of MuJoCo; the image itself is normal)
-#   robot base frame    : x forward, y left, z up, origin between the wheels
-# The camera sits at (0.086, 0, 0.107) in the base frame (robot xml, "cam").
-# So a point p_cam in the OpenCV frame becomes
-#     p_base = R_bc @ p_cam + t_bc
-# where R_bc maps  cam z -> base x,  cam x -> base -y,  cam y -> base -z.
+# B6: frames: camera -> robot base, then range and bearing 
+# OpenCV camera (x right, y down, z forward) -> robot base (x fwd, y left, z up).
+# p_base = R_BC @ p_cam + CAM_POS_IN_BASE
 CAM_POS_IN_BASE = np.array([0.086, 0.0, 0.107])
 
 # Rotation from the OpenCV camera frame to the robot base frame.
@@ -263,21 +253,122 @@ def range_bearing(p_base):
     bearing = np.arctan2(y, x)           # + = marker to the left, - = to the right (radians)
     return rng, bearing
 
-# --- B7. measure the noise you will put in R (Person 2 -> Person 3) ---------------
-# Park the robot facing the marker, take 100+ photos, run detect_marker + range_bearing
-# on each, and compute the std of range and of bearing. Do it at 2-3 distances.
-# Those stds (squared) are the diagonal of R in ekf.py. Put the table on the page.
+# B7: Experiment - measure the noise you will put in R 
+# Run it with:  python sensing.py noise
+
+# Park the robot at 1, 1.5, 2 m, take 150 photos each, measure range/bearing
+# error vs truth. std -> R in the EKF, mean -> bias.  Run: python sensing.py noise
+# The sim repeats exactly, so we add pixel noise + tiny pose jitter.
+# Scene is sceneforturtle.xml: B7 applies the same size/camera correction as
+# sensor_adapter.py. Max 2 m because MIN_SIDE_PX rejects the 0.16 m marker past ~2.2 m.
+
+MARKER_WORLD = np.array([2.888, 0.0])          # marker centre on the floor plane (sceneforturtle.xml)
+SCENE_MARKER_SIZE = 0.16                       # real black square: 0.2 m plate x 200/250 (sim.py line 82)
+SCENE_CAM_POS = np.array([0.07, 0.0, 0.107])   # real camera mount in this scene
+PIX_NOISE = 2.0                         # grey levels out of 255
+POS_JITTER = 0.002                      # m
+ANG_JITTER = np.radians(0.2)            # rad
+
+
+def measure_noise(distances=(1.0, 1.5, 2.0), n=150):
+    mj_model, data = sim.load()
+    renderer, opt = sim.make_renderer(mj_model)
+    K, dist = load_calibration()
+    rand = np.random.default_rng(0)      # fixed seed so the table is the same every run
+    rows = []
+
+    for d in distances:
+        rng_err, brg_err = [], []
+        for _ in range(n):
+            # 1. park the robot d metres in front of the marker, with a tiny random jitter
+            x = MARKER_WORLD[0] - d + rand.normal(0, POS_JITTER)
+            y = MARKER_WORLD[1] + rand.normal(0, POS_JITTER)
+            th = rand.normal(0, ANG_JITTER)
+            sim.set_pose(mj_model, data, x, y, th)
+
+            # 2. photo + pixel noise
+            img = sim.read_camera(renderer, opt, data).astype(float)
+            img = img + rand.normal(0, PIX_NOISE, img.shape)
+            img = np.clip(img, 0, 255).astype(np.uint8)
+
+            # 3. measured range and bearing with our B5 + B6
+            seen, tvec, _ = detect_marker(img, K, dist)
+            if not seen:
+                continue
+            # same correction as sensor_adapter.py: real marker size and camera mount
+            tvec = tvec * SCENE_MARKER_SIZE / MARKER_SIZE
+            p = cam_to_base(tvec) + SCENE_CAM_POS - CAM_POS_IN_BASE
+            r_meas, b_meas = range_bearing(p)
+
+            # 4. true range and bearing: marker position rotated into the robot's frame
+            dx, dy = MARKER_WORLD[0] - x, MARKER_WORLD[1] - y
+            bx = np.cos(th) * dx + np.sin(th) * dy
+            by = -np.sin(th) * dx + np.cos(th) * dy
+            r_true, b_true = np.hypot(bx, by), np.arctan2(by, bx)
+
+            # 5. store the errors (bearing wrapped so 359 deg reads as -1 deg)
+            rng_err.append(r_meas - r_true)
+            brg_err.append(np.arctan2(np.sin(b_meas - b_true), np.cos(b_meas - b_true)))
+
+        rng_err, brg_err = np.array(rng_err), np.array(brg_err)
+        if len(rng_err) < 2:
+            print(f"{d:.2f} m: marker seen in {len(rng_err)}/{n} photos - not enough")
+            continue
+        rows.append((d, len(rng_err), n, rng_err.mean(), rng_err.std(),
+                     brg_err.mean(), brg_err.std()))
+
+    # 6. the table for the page
+    print("\n dist | seen    | range bias | range std | bearing bias | bearing std")
+    print("------+---------+------------+-----------+--------------+------------")
+    for d, k, n_tot, rb, rs, bb, bs in rows:
+        print(f" {d:4.2f} | {k:3d}/{n_tot:<3d} | {rb*1000:7.1f} mm | {rs*1000:6.1f} mm "
+              f"| {np.degrees(bb):9.3f} deg | {np.degrees(bs):7.3f} deg")
+    print("\nrejections:", REJECTS)
+    print("R diagonal = (range std^2, bearing std^2):")
+    for d, _, _, _, rs, _, bs in rows:
+        print(f"  {d:.2f} m: [{rs**2:.2e}, {bs**2:.2e}]")
+
+    if not rows:
+        return rows
+
+    # save one fixed R for the EKF (ekf.noise_matrices loads the key "R")
+    # worst case over the distances, with the bias folded in since the EKF doesn't remove it
+    var_r = max(rb**2 + rs**2 for _, _, _, rb, rs, _, _ in rows)
+    var_b = max(bb**2 + bs**2 for _, _, _, _, _, bb, bs in rows)
+    R = np.diag([var_r, var_b])
+    # named after the K it was measured with, so one run never overwrites the other
+    calibrated = (Path(__file__).parent / "calib.npz").exists()
+    out = Path(__file__).parent / ("camera_R_calibrated.npz" if calibrated else "camera_R_nominal.npz")
+    np.savez(out, R=R)
+    print("\nsaved", out)
+    print("R =\n", R)
+
+    return rows
 
 if __name__ == "__main__":
+    # B7 noise experiment:  python sensing.py noise
+    if len(sys.argv) > 1 and sys.argv[1] == "noise":
+        measure_noise()
+        sys.exit()
+        
+    # B4 calibration:  python sensing.py calib
+    if len(sys.argv) > 1 and sys.argv[1] == "calib":
+        run_calibration()
+        sys.exit()
+
     # self-check: python sensing.py   (needs the TODOs in B5/B6 done)
     # named mj_model (not model) so it doesn't overwrite "import model" at the top
     mj_model, data = sim.load()
-    sim.set_pose(mj_model, data, 1.0, 0.0, 0.0)          # 1.049 m from the marker, facing it
+    sim.set_pose(mj_model, data, 1.0, 0.0, 0.0)          # 1.888 m from the marker, facing it
     renderer, opt = sim.make_renderer(mj_model)
     img = sim.read_camera(renderer, opt, data)
     seen, tvec, rvec = detect_marker(img, camera_matrix())
     print("seen:", seen, " tvec:", tvec)
     if seen:
         p = cam_to_base(tvec)
-        print("marker in base frame:", p, " expect about [1.049, 0, 0.15]")
-        print("range, bearing:", range_bearing(p), " expect about (1.049, 0)")
+        # raw B5/B6 use the scaffold marker size and camera offset, so in sceneforturtle.xml
+        # the raw range reads ~2.46 m; sensor_adapter.py corrects it to ~1.89 m in the pipeline.
+        print("marker in base frame (raw):", p)
+        print("range, bearing (raw):", range_bearing(p), " expect about (2.46, 0)")
+        p_fixed = cam_to_base(tvec * SCENE_MARKER_SIZE / MARKER_SIZE) + SCENE_CAM_POS - CAM_POS_IN_BASE
+        print("range, bearing (corrected):", range_bearing(p_fixed), " expect about (1.888, 0)")
