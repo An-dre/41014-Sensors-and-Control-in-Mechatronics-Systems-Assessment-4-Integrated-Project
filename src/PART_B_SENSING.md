@@ -7,11 +7,11 @@ Part B turns the simulators exact wheel angles, LiDAR ranges and camera images i
 From the repository root, install `requirements.txt`, then run:
 
 ```bash
-python src\sensing.py              # self-check, expect range ≈ 1.888 m corrected
-python src\sensing.py calib        # saves src\calib.npz, prints K vs true K and reprojection error
-python src\sensing.py noise        # saves src\camera_R_calibrated.npz, prints the noise table
+python src\sensing.py  # self-check: raw and corrected marker range/bearing from one known pose
+python src\sensing.py calib  # B4: prints calibrated vs true K and reprojection error, saves src\calib.npz
+python src\sensing.py noise  # B7: prints the noise table, saves src\camera_R_calibrated.npz
 
-# Full pipeline with Part B's calibrated camera and measured R.
+# Full pipeline with Part B's calibrated camera and measured R
 python src\run_pipeline.py --calibration src\calib.npz --measurement-noise src\camera_R_calibrated.npz --output src\results_pipeline\calibrated
 ```
 
