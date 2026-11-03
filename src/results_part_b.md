@@ -32,6 +32,8 @@ Calibrated K (B4):
 | 1.5 m | 150/150 | 9.1 mm | 13.9 mm | 0.017° | 0.040° |
 | 2.0 m | 150/150 | 33.8 mm | 18.5 mm | 0.014° | 0.033° |
 
+Results vary by a few mm between machines because of rendering differences; the trends are unchanged.
+
 The 10 missing frames at 1.5 m returned nan poses, which led to the "not finite" check in detect_marker().
 
 ### Discussion
