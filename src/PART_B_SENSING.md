@@ -7,12 +7,12 @@ Part B turns the simulators exact wheel angles, LiDAR ranges and camera images i
 From the repository root, install `requirements.txt`, then run:
 
 ```bash
-python tb3_project/sensing.py            # self-check: marker range and bearing from one known pose
-python tb3_project/sensing.py calib      # B4: calibrated vs true K, saves calib.npz
-python tb3_project/sensing.py noise      # B7: noise table, saves camera_R_nominal.npz or camera_R_calibrated.npz
+python src\sensing.py              # self-check, expect range ≈ 1.888 m corrected
+python src\sensing.py calib        # saves src\calib.npz, prints K vs true K and reprojection error
+python src\sensing.py noise        # saves src\camera_R_calibrated.npz, prints the noise table
 
 # Full pipeline with Part B's calibrated camera and measured R.
-python tb3_project/run_pipeline.py --calibration tb3_project/calib.npz --measurement-noise tb3_project/camera_R_calibrated.npz
+python src\run_pipeline.py --calibration src\calib.npz --measurement-noise src\camera_R_calibrated.npz --output src\results_pipeline\calibrated
 ```
 
 B7 uses `calib.npz` when it exists and names its output after the K it used, so the two R files never overwrite each other. To regenerate the nominal table, rename `calib.npz` first. B7 uses fixed random seeds, so its tables are repeatable.
