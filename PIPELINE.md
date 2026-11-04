@@ -231,5 +231,6 @@ alongside the full NPZ logs. These files are generated and ignored by Git.
 * LiDAR replanning applies to navigation up to the pre-dock point. The final
   straight assumes a clear docking station; it does not navigate around a new
   obstruction placed in that final corridor.
+  
   This integration was written with OpenAI Codex assistance for code, tests and
   documentation; include that purpose in the team's AI declaration.
