@@ -5,14 +5,19 @@ Run with --collect once; omit --collect to replay existing logs.
 
 import argparse
 import csv
+import sys
 from pathlib import Path
 from types import SimpleNamespace
 
 import numpy as np
-import ekf
-import run_pipeline as pipeline
 
 HERE = Path(__file__).resolve().parent
+# so the imports below can find main.py and the files in the part_* folders
+sys.path[:0] = [str(HERE.parent)] + [str(p) for p in sorted(HERE.parent.glob("part_*"))]
+
+import ekf
+import main as pipeline
+
 SCENARIOS = {
     "west": dict(start="west", wheel_gain=(1., 1.), camera_dropout=(-1., -1.)),
     "north": dict(start="north", wheel_gain=(1., 1.), camera_dropout=(-1., -1.)),

@@ -1,6 +1,6 @@
 """Run the integrated sensing -> EKF -> LiDAR navigation -> LQR pipeline.
 
-From the repository root: python tb3_project/run_pipeline.py
+From the repository root: python main.py
 Use --viewer to watch, --trials 3 for repeated trials, --wheel-gain 0.9 1
 for a weak left motor, or --camera-dropout 15 20 to hide images for five seconds.
 """
@@ -9,9 +9,13 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import sys
 import time
 
 import numpy as np
+
+# so the imports below can find the files in the part_* folders
+sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.glob("part_*"))]
 
 import controller
 import ekf
@@ -29,7 +33,7 @@ STARTS = {
     "north": np.array([-2.2, 2.0, -np.pi / 2]),
     "south": np.array([-1.0, -2.2, 0.0]),
 }
-DEFAULT_OUTPUT = Path(__file__).resolve().parent / "results_pipeline"
+DEFAULT_OUTPUT = Path(__file__).resolve().parent / "part_e_integration" / "results_pipeline"
 
 
 class Pipeline:

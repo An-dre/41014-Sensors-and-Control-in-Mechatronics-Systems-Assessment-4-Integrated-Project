@@ -122,6 +122,10 @@ def observability_matrix(A, C):
 
 
 if __name__ == "__main__":
+    import sys
+    from pathlib import Path
+    # so this self-check can find ekf.py in part_c_estimation
+    sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
     import ekf
     # self-checks: run  python model.py
     print("wheels_to_body(5, 5) ->", wheels_to_body(5.0, 5.0), " expect v=0.165, omega=0")

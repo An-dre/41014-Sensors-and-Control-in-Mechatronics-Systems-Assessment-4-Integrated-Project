@@ -13,27 +13,31 @@
 # that only returns NaN, and checks every wheel command comes out bit-for-bit the same.
 #
 # Run from the outer project folder:
-#   python tb3_project\run_tracking.py                     one run of each route in MuJoCo
-#   python tb3_project\run_tracking.py --trials 10         10 random trials per route
-#   python tb3_project\run_tracking.py --compare           final design vs the alternatives
-#   python tb3_project\run_tracking.py --sweep             effort vs tracking error (R sweep)
-#   python tb3_project\run_tracking.py --leak-check        proves the truth never steers it
-#   python tb3_project\run_tracking.py --check-sim         check wheels and marker reading first
-#   python tb3_project\run_tracking.py --viewer            watch one run in the MuJoCo viewer
-#   python tb3_project\run_tracking.py --wheel-gain 0.9 1  left motor 10 % weak (disturbance)
-#   python tb3_project\run_tracking.py --report            all of the above that the write-up uses
+#   python part_d_control\run_tracking.py                     one run of each route in MuJoCo
+#   python part_d_control\run_tracking.py --trials 10         10 random trials per route
+#   python part_d_control\run_tracking.py --compare           final design vs the alternatives
+#   python part_d_control\run_tracking.py --sweep             effort vs tracking error (R sweep)
+#   python part_d_control\run_tracking.py --leak-check        proves the truth never steers it
+#   python part_d_control\run_tracking.py --check-sim         check wheels and marker reading first
+#   python part_d_control\run_tracking.py --viewer            watch one run in the MuJoCo viewer
+#   python part_d_control\run_tracking.py --wheel-gain 0.9 1  left motor 10 % weak (disturbance)
+#   python part_d_control\run_tracking.py --report            all of the above that the write-up uses
 # Add --camera synthetic to fake the marker reading from the pose instead of rendering the
 # camera (about 40 times faster), --as-is to load the robot exactly as the xml says (it
 # slips, see fix_floor_contacts), or --plant kinematic to use the fast stand-in model (no
-# MuJoCo needed). Plots and tables go to tb3_project/results_part_d/.
+# MuJoCo needed). Plots and tables go to part_d_control/results_part_d/.
 
 import argparse
 import csv
+import sys
 import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 import numpy as np
+
+# so the imports below can find the files in the part_* folders
+sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
 
 import controller as ctl
 import ekf

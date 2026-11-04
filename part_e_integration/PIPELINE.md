@@ -1,6 +1,6 @@
 # Integrated TurtleBot pipeline
 
-The new entry point is `tb3_project/run_pipeline.py`. It uses the actual MuJoCo
+The new entry point is `main.py`. It uses the actual MuJoCo
 camera and LiDAR, Dinel's sensing functions, Gabriel's model, Abdul's EKF and
 Andre's LQR. It navigates to a known docking approach point using measured
 LiDAR obstacles, then makes a straight visual docking approach.
@@ -8,7 +8,7 @@ LiDAR obstacles, then makes a straight visual docking approach.
 This completes the runnable connection between the components. It does not
 complete Part B's calibration experiments. Part C now includes comparative
 simulation noise tuning and fresh-seed validation in
-[PART_C_ESTIMATION.md](tb3_project/PART_C_ESTIMATION.md); sensor-measured tuning
+[PART_C_ESTIMATION.md](../part_c_estimation/PART_C_ESTIMATION.md); sensor-measured tuning
 remains dependent on Part B's handoff.
 
 ## Install and run
@@ -18,8 +18,8 @@ Tested on Windows with Python 3.10.11. From the repository root:
 ```powershell
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt
-.venv/Scripts/python tb3_project/run_pipeline.py
-.venv/Scripts/python tb3_project/run_pipeline.py --viewer
+.venv/Scripts/python main.py
+.venv/Scripts/python main.py --viewer
 ```
 
 The first command without `--viewer` runs as fast as possible and saves plots.
@@ -35,25 +35,26 @@ Other examples:
 
 ```powershell
 # Repeat with random placement error (2 cm and 1.5 degrees standard deviation).
-python tb3_project/run_pipeline.py --placement-noise --trials 3 --seed 30 --output tb3_project/results_pipeline/validation/west
+python main.py --placement-noise --trials 3 --seed 30 --output part_e_integration/results_pipeline/validation/west
 
 # Start from the north of the room.
-python tb3_project/run_pipeline.py --start north --placement-noise --trials 3 --seed 10 --output tb3_project/results_pipeline/validation/north
+python main.py --start north --placement-noise --trials 3 --seed 10 --output part_e_integration/results_pipeline/validation/north
 
 # Weak left motor and camera loss from 25 to 30 seconds.
-python tb3_project/run_pipeline.py --start south --placement-noise --trials 3 --seed 20 --wheel-gain 0.9 1 --camera-dropout 25 30 --output tb3_project/results_pipeline/validation/south_disturbed
+python main.py --start south --placement-noise --trials 3 --seed 20 --wheel-gain 0.9 1 --camera-dropout 25 30 --output part_e_integration/results_pipeline/validation/south_disturbed
 
 # Use Dinel's calibration when ready (NPZ keys: K and dist).
-python tb3_project/run_pipeline.py --calibration path/to/calib.npz
+python main.py --calibration path/to/calib.npz
 
 # Load the separate, measured range/bearing covariance from Part B.
-python tb3_project/run_pipeline.py --calibration path/to/calib.npz --measurement-noise path/to/camera_noise.npz
+python main.py --calibration path/to/calib.npz --measurement-noise path/to/camera_noise.npz
 
 # Compare estimator noise settings on identical recorded sensor inputs.
-python tb3_project/evaluate_estimator.py --collect
+python part_c_estimation/evaluate_estimator.py --collect
 
 # Existing model, EKF and controller tests.
-python -B -m unittest discover -s tb3_project -p "test_*.py" -v
+python -B -m unittest discover -s part_c_estimation -p "test_*.py" -v
+python -B -m unittest discover -s part_d_control -p "test_*.py" -v
 ```
 
 Use a different `--output` directory for each set of conditions. Running with
@@ -82,7 +83,7 @@ are left/right angular velocities in rad/s. The LQR receives the EKF estimate.
 
 ## Walkthrough of the changes
 
-### 1. `tb3_project/sim.py`: simulator access
+### 1. `part_e_integration/sim.py`: simulator access
 
 This supplies the missing `sim` module expected by Part B. It loads the current
 scene, reads sensors by name, renders the `rgb` camera and advances the physics
@@ -98,7 +99,7 @@ The camera position, LiDAR position and known marker position are read from
 the model definition. Reading fixed mounting dimensions and a known landmark
 is different from reading the robot's live world pose.
 
-### 2. `tb3_project/sensor_adapter.py`: Part B connection
+### 2. `part_e_integration/sensor_adapter.py`: Part B connection
 
 Both existing `sensing.py` files are unchanged. The adapter calls Part B's
 encoder, odometry, LiDAR, marker detection and frame conversion functions.
@@ -122,7 +123,7 @@ Use `--measurement-noise` to load a separate NPZ containing a positive definite
 2 by 2 `R` in range-metres/bearing-radians order. `--q-scale` and `--r-scale`
 change one trial's matrices without modifying the legacy Part D settings.
 
-### 3. `tb3_project/navigation.py`: LiDAR navigation
+### 3. `part_e_integration/navigation.py`: LiDAR navigation
 
 The map is a 0.10 m grid in the known 6 by 6 m room. Internal obstacles come
 from LiDAR endpoints transformed using the estimated pose and LiDAR mounting
@@ -143,7 +144,7 @@ At the approach point, the controller follows the existing 0.90 m final
 straight into the dock. This simple method prioritises readability over speed;
 it does not reproduce the smooth full-route trajectories in Part D's old trials.
 
-### 4. `tb3_project/run_pipeline.py`: one loop and evaluation
+### 4. `main.py`: one loop and evaluation
 
 `Pipeline.step()` accepts wheel angles, time, a scan and an image. It has no
 simulator argument and cannot read ground truth. `run_trial()` handles setup,
@@ -216,7 +217,7 @@ During development, two varied trials initially stopped when an inflated
 obstacle margin covered the current cell. The start allowance described above
 fixed that planner deadlock; the final trials include those same seeds.
 
-Detailed local outputs are in `tb3_project/results_pipeline/validation/`.
+Detailed local outputs are in `part_e_integration/results_pipeline/validation/`.
 Each group's `summary.csv`, individual JSON files and plots can be inspected
 alongside the full NPZ logs. These files are generated and ignored by Git.
 

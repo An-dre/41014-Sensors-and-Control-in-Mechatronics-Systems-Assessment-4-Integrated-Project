@@ -11,20 +11,20 @@ for criterion C in the supplied marking guide.
 From the repository root, install `requirements.txt`, then run:
 
 ```powershell
-python -B -m unittest discover -s tb3_project -p "test_*.py" -v
-python tb3_project/run_pipeline.py
+python -B -m unittest discover -s part_c_estimation -p "test_*.py" -v
+python main.py
 
 # Tuning set: nine rendered-camera closed-loop trials and paired replay comparisons.
-python tb3_project/evaluate_estimator.py --collect
+python part_c_estimation/evaluate_estimator.py --collect
 
 # Independent validation seeds; settings remain Q x1 and R x1.
-python tb3_project/evaluate_estimator.py --collect --seed 2000 --output tb3_project/results_part_c/validation
+python part_c_estimation/evaluate_estimator.py --collect --seed 2000 --output part_c_estimation/results_part_c/validation
 
 # Recompute tuning metrics and figures from existing sensor logs.
-python tb3_project/evaluate_estimator.py
+python part_c_estimation/evaluate_estimator.py
 
 # Change noise settings in the actual closed loop, not only offline replay.
-python tb3_project/run_pipeline.py --q-scale 0.1 --r-scale 1 --output tb3_project/results_pipeline/q01
+python main.py --q-scale 0.1 --r-scale 1 --output part_e_integration/results_pipeline/q01
 ```
 
 Collection requires a fresh output directory to prevent mixing experiments.
@@ -192,8 +192,8 @@ cross terms have m*rad units. Report and address systematic bias separately.
 Do not use degrees squared or an unexplained numerical floor for zero variance.
 
 ```powershell
-python tb3_project/run_pipeline.py --calibration path/to/calib.npz --measurement-noise path/to/camera_noise.npz
-python tb3_project/evaluate_estimator.py --collect --calibration path/to/calib.npz --measurement-noise path/to/camera_noise.npz --output tb3_project/results_part_c/after_calibration
+python main.py --calibration path/to/calib.npz --measurement-noise path/to/camera_noise.npz
+python part_c_estimation/evaluate_estimator.py --collect --calibration path/to/calib.npz --measurement-noise path/to/camera_noise.npz --output part_c_estimation/results_part_c/after_calibration
 ```
 
 K/dist intrinsics and R describe different things, so they are loaded separately.
