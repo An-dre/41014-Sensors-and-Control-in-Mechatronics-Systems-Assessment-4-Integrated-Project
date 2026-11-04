@@ -100,8 +100,7 @@ is different from reading the robot's live world pose.
 
 ### 2. `tb3_project/sensor_adapter.py`: Part B connection
 
-Both existing `sensing.py` files are unchanged. The adapter calls Part B's
-encoder, odometry, LiDAR, marker detection and frame conversion functions.
+`sensing.py` keeps Part B’s configured constants and function interfaces, so the adapter calls them unchanged.
 
 Two explicit scene settings bridge the different assumptions in those files:
 
