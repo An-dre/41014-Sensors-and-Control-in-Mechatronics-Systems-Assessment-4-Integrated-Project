@@ -4,7 +4,7 @@ This is a group project. This team integrates sensing, estimation and control on
 
 **Chosen track:** Track A — TurtleBot3 visual waypoint navigation and ArUco docking
 
-## Team
+## Project 100
 
 | Member | Part |
 |---|---|
