@@ -6,7 +6,7 @@ import cv2
 from spatialmath import SE2
 
 
-model_path = Path(__file__).parent / "sceneforturtle.xml"
+model_path = Path(__file__).resolve().parent.parent / "robotis_tb3" / "sceneforturtle.xml"
 model = mujoco.MjModel.from_xml_path(str(model_path))
 data = mujoco.MjData(model)
 data.ctrl[:] = [1.0, 1.0]  # both wheels rad/s

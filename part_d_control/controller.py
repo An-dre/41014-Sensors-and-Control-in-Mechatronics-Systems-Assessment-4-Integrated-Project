@@ -12,7 +12,7 @@
 #   4. u = u_ref - K e   (feedforward drives the plan, feedback fixes the error)
 #   5. if either wheel would pass its speed limit, slow both by the same factor
 #
-# Unit checks:                 python -m unittest discover -s tb3_project -p test_controller.py -v
+# Unit checks:                 python -m unittest discover -s part_d_control -p test_controller.py -v
 
 import numpy as np
 from scipy.linalg import solve_discrete_are

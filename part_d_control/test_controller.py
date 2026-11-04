@@ -1,7 +1,12 @@
 # Core Part D checks: stability, wheel limits, docking, route clearance and truth isolation.
 
+import sys
 import unittest
+from pathlib import Path
 import numpy as np
+
+# so the imports below can find the files in the part_* folders
+sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
 import controller as ctl
 import model
 

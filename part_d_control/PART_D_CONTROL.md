@@ -5,7 +5,7 @@ room's boxes and docks in front of the ArUco-marked station, in the group's MuJo
 ever uses the EKF estimate from `ekf.py` (Part C). The simulator's true pose is used to score
 runs and nothing else, and section 2.9 shows how that's checked.
 
-| file in `tb3_project/` | what it is |
+| file in `part_d_control/` | what it is |
 |---|---|
 | `controller.py` | the controller: error model, LQR, gain schedule, reference trajectory, docking, wheel limits |
 | `test_controller.py` | 12 core checks: maths, logic, limits, the MuJoCo scene, and the ground-truth checks |
@@ -15,13 +15,13 @@ runs and nothing else, and section 2.9 shows how that's checked.
 **Run it** from the outer project folder (needs numpy, scipy, matplotlib, mujoco, opencv-python):
 
 ```
-python -m unittest discover -s tb3_project -p test_controller.py -v
-python tb3_project\run_tracking.py --check-sim                    pre-flight: wheel slip and marker reading
-python tb3_project\run_tracking.py                                one run of each route, rendered camera, with plots
-python tb3_project\run_tracking.py --viewer                       watch a run in the MuJoCo viewer
-python tb3_project\run_tracking.py --leak-check                   ground truth never reaches the controller (section 2.9)
-python tb3_project\run_tracking.py --camera synthetic --report    every batch result in section 2 (about 20 min)
-python tb3_project\run_tracking.py --trials 10 --seed 4000        the rendered-camera trials in section 2.4 (about 1 h)
+python -m unittest discover -s part_d_control -p test_controller.py -v
+python part_d_control\run_tracking.py --check-sim                    pre-flight: wheel slip and marker reading
+python part_d_control\run_tracking.py                                one run of each route, rendered camera, with plots
+python part_d_control\run_tracking.py --viewer                       watch a run in the MuJoCo viewer
+python part_d_control\run_tracking.py --leak-check                   ground truth never reaches the controller (section 2.9)
+python part_d_control\run_tracking.py --camera synthetic --report    every batch result in section 2 (about 20 min)
+python part_d_control\run_tracking.py --trials 10 --seed 4000        the rendered-camera trials in section 2.4 (about 1 h)
 ```
 
 ## 1. Design

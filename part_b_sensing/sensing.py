@@ -1,10 +1,14 @@
+import sys
+from pathlib import Path
+
+# so the imports below can find the files in the part_* folders
+sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
+
 import model
 import numpy as np
 import cv2
 import sim
-import sys
 import mujoco
-from pathlib import Path
 
 # B1: encoder noise 
 # A real encoder gives integer ticks. The TB3's Dynamixel gives 4096 ticks per turn.

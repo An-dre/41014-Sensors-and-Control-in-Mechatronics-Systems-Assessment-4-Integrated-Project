@@ -1,15 +1,20 @@
 # Optional checks for Part C. The robot never imports or runs this file.
 # For a quick example, you can just run ekf.py instead.
 # From the outer project folder, run these more detailed checks with:
-# python -m unittest discover -s tb3_project -p test_ekf.py -v
+# python -m unittest discover -s part_c_estimation -p test_ekf.py -v
 #
 # unittest runs each test_ method; a failed assertion reports a failed check.
 # assert_allclose compares numbers while allowing small rounding differences.
 # Passing these checks verifies examples of the maths, not successful docking
 # or suitable Q/R values for the actual robot. Those need separate experiments.
 
+import sys
 import unittest
+from pathlib import Path
 import numpy as np
+
+# so the imports below can find the files in the part_* folders
+sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
 import ekf
 import model
 
