@@ -15,10 +15,8 @@ This is a group project. Teams integrate sensing, estimation and control on a si
 
 ## Integration
 
-A shared sensing, EKF, LiDAR navigation and LQR runner is now available. Camera calibration and measured sensor-noise settings remain with Dinel (Part B).
-
 - See [PIPELINE.md](PIPELINE.md) for setup, commands, the code walkthrough and limitations.
-- Part C design, noise-tuning comparisons and independent validation are in [PART_C_ESTIMATION.md](tb3_project/PART_C_ESTIMATION.md).
+
 
 ## Quick start
 
