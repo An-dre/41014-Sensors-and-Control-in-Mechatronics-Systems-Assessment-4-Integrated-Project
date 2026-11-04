@@ -1,19 +1,28 @@
-# 41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project
+# 41014 Sensors and Control in Mechatronics Systems – Assessment 4: Integrated Project
+
 This is a group project. Teams integrate sensing, estimation and control on a simulated platform.
-Chosen track: **Track A — TurtleBot3 visual waypoint navigation and ArUco docking**.
 
-Gabriel: Part A Modelling
-Dinel: Part B Sensing
-Abdul: Part C Estimation 
-Andre:Part D Control
+**Chosen track:** Track A — TurtleBot3 visual waypoint navigation and ArUco docking
 
-Integration: a shared sensing, EKF, LiDAR navigation and LQR runner is now available.
-Camera calibration and measured sensor-noise settings remain with Dinel (Part B).
-See [PIPELINE.md](PIPELINE.md) for setup, commands, the code walkthrough and limitations.
-Part C design, noise-tuning comparisons and independent validation are in
-[PART_C_ESTIMATION.md](tb3_project/PART_C_ESTIMATION.md).
+## Team
 
-Quick start from this folder (Python 3.10):
+| Member | Part |
+|---|---|
+| Gabriel | Part A – Modelling |
+| Dinel | Part B – Sensing |
+| Abdul | Part C – Estimation |
+| Andre | Part D – Control |
+
+## Integration
+
+A shared sensing, EKF, LiDAR navigation and LQR runner is now available. Camera calibration and measured sensor-noise settings remain with Dinel (Part B).
+
+- See [PIPELINE.md](PIPELINE.md) for setup, commands, the code walkthrough and limitations.
+- Part C design, noise-tuning comparisons and independent validation are in [PART_C_ESTIMATION.md](tb3_project/PART_C_ESTIMATION.md).
+
+## Quick start
+
+From this folder (Python 3.10):
 
 ```powershell
 python -m pip install -r requirements.txt
@@ -21,9 +30,7 @@ python tb3_project/run_pipeline.py
 python tb3_project/run_pipeline.py --viewer
 ```
 
-The default run saves results in `tb3_project/results_pipeline/` and uses the
-camera's nominal intrinsics until a calibration file is supplied. Ground truth
-is used for evaluation only. Part B's source files have not been edited.
+The default run saves results in `tb3_project/results_pipeline/` and uses the camera's nominal intrinsics until a calibration file is supplied. Ground truth is used for evaluation only. Part B's source files have not been edited.
 
 Part A Gabriel Modelling Section:
 
