@@ -222,12 +222,8 @@ alongside the full NPZ logs. These files are generated and ignored by Git.
 
 ## Dinel's remaining work and current limits
 
-* Part B still owns calibration images/board setup, measured sensor-noise results,
-  and any changes to its detector or sensing algorithms. The current scene has
-  no calibration board; adding `sim.py` alone does not complete calibration.
-* The EKF's Q and R now have comparative simulation tuning evidence, but are not
-  measured sensor calibration. See the Part C report for the consistency limits
-  and the calibration and measured-noise inputs still needed from Part B.
+
+* Q has comparative simulation tuning evidence; R can now be the measured Part B covariance. See the Part C and Part B reports for consistency limits.
 * Unknown space is treated as traversable. The map accumulates obstacle hits and
   does not clear old obstacles, so large pose drift or moving obstacles can make
   it conservative. If no path exists, it holds still and eventually reaches
