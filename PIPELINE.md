@@ -220,7 +220,7 @@ Detailed local outputs are in `tb3_project/results_pipeline/validation/`.
 Each group's `summary.csv`, individual JSON files and plots can be inspected
 alongside the full NPZ logs. These files are generated and ignored by Git.
 
-## Dinel's remaining work and current limits
+## Current limits
 
 
 * Q has comparative simulation tuning evidence; R can now be the measured Part B covariance. See the Part C and Part B reports for consistency limits.
@@ -231,7 +231,5 @@ alongside the full NPZ logs. These files are generated and ignored by Git.
 * LiDAR replanning applies to navigation up to the pre-dock point. The final
   straight assumes a clear docking station; it does not navigate around a new
   obstruction placed in that final corridor.
-* The project page, group number, contribution statements, AI declaration and
-  five-minute demonstration still need the team's final submission work.
   This integration was written with OpenAI Codex assistance for code, tests and
   documentation; include that purpose in the team's AI declaration.
