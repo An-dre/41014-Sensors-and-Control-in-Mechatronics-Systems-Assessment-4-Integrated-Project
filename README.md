@@ -29,3 +29,13 @@ python tb3_project/run_pipeline.py --viewer
 ```
 
 The default run saves results in `tb3_project/results_pipeline/` and uses the camera's nominal intrinsics until a calibration file is supplied. Ground truth is used for evaluation only.
+
+## Generative AI Statement
+
+| Tool | Used for |
+|---|---|
+| **Claude (Anthropic)** | Explaining concepts, drafting and debugging code, diagnosing simulator errors, and formatting the GitHub project pages |
+| **OpenAI Codex** | Drafting code, tests and documentation, and integrating the parts into the shared pipeline |
+
+All AI suggestions were reviewed by the team before use. We ran and tested the code ourselves, checked the results against the simulator, and made our own decisions on parameters and design choices. Every team member can explain the code and results for their part. All experiments were run by the team, and all reported numbers come from our own runs.
+
