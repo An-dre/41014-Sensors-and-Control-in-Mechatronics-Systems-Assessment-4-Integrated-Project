@@ -101,8 +101,7 @@ is different from reading the robot's live world pose.
 
 ### 2. `part_e_integration/sensor_adapter.py`: Part B connection
 
-Both existing `sensing.py` files are unchanged. The adapter calls Part B's
-encoder, odometry, LiDAR, marker detection and frame conversion functions.
+`sensing.py` keeps Part B’s configured constants and function interfaces, so the adapter calls them unchanged.
 
 Two explicit scene settings bridge the different assumptions in those files:
 
@@ -221,14 +220,10 @@ Detailed local outputs are in `part_e_integration/results_pipeline/validation/`.
 Each group's `summary.csv`, individual JSON files and plots can be inspected
 alongside the full NPZ logs. These files are generated and ignored by Git.
 
-## Dinel's remaining work and current limits
+## Current limits
 
-* Part B still owns calibration images/board setup, measured sensor-noise results,
-  and any changes to its detector or sensing algorithms. The current scene has
-  no calibration board; adding `sim.py` alone does not complete calibration.
-* The EKF's Q and R now have comparative simulation tuning evidence, but are not
-  measured sensor calibration. See the Part C report for the consistency limits
-  and the calibration and measured-noise inputs still needed from Part B.
+
+* Q has comparative simulation tuning evidence; R can now be the measured Part B covariance. See the Part C and Part B reports for consistency limits.
 * Unknown space is treated as traversable. The map accumulates obstacle hits and
   does not clear old obstacles, so large pose drift or moving obstacles can make
   it conservative. If no path exists, it holds still and eventually reaches
@@ -236,7 +231,6 @@ alongside the full NPZ logs. These files are generated and ignored by Git.
 * LiDAR replanning applies to navigation up to the pre-dock point. The final
   straight assumes a clear docking station; it does not navigate around a new
   obstruction placed in that final corridor.
-* The project page, group number, contribution statements, AI declaration and
-  five-minute demonstration still need the team's final submission work.
+  
   This integration was written with OpenAI Codex assistance for code, tests and
   documentation; include that purpose in the team's AI declaration.

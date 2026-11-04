@@ -199,8 +199,8 @@ Observability describes whether the robot’s states can be determined from the 
 |---|---|---|---|
 | Encoders only | 0 (nothing measures x, y, θ) | 0 | no |
 | Camera full pose | I₃ | 3 | yes |
-| Camera range + bearing, robot moving | H along the path | [fill from your run] | |
-| Camera range + bearing, turning on the spot | H along the path | [fill from your run] | |
+| Camera range + bearing, robot moving | H along the path | 2 |no - 2 of 3 states |
+| Camera range + bearing, turning on the spot | H along the path | 2 |no - 2 of 3 states |
 
 Encoders measure wheel rotation rather than absolute position or heading. Without an external pose measurement, errors accumulate as odometry propagates the estimate. The terms F[0,2] and F[1,2] show how heading uncertainty becomes position uncertainty while the robot moves.
 
