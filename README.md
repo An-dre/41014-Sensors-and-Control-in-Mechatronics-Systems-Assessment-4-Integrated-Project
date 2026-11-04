@@ -1,6 +1,6 @@
 # 41014 Sensors and Control in Mechatronics Systems – Assessment 4: Integrated Project
 
-This is a group project. Teams integrate sensing, estimation and control on a simulated platform.
+This is a group project. This team integrates sensing, estimation and control on MujoCo.
 
 **Chosen track:** Track A — TurtleBot3 visual waypoint navigation and ArUco docking
 
