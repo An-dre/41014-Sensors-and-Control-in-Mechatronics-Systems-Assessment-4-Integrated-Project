@@ -124,7 +124,7 @@ $$z = h(\mathbf{x}) = \begin{bmatrix} \rho \\ \beta \end{bmatrix} = \begin{bmatr
 
 The EKF requires the Jacobian H of the measurement function h with respect to the state. This matrix describes how small changes in the estimated position and heading affect the predicted range and bearing.
 
-$$H = \frac{\partial h}{\partial \mathbf{x}} = \begin{bmatrix} -\dfrac{m_x - x}{\rho} & -\dfrac{m_y - y}{\rho} & 0 \\[8pt] \dfrac{m_y - y}{\rho^2} & -\dfrac{m_x - x}{\rho^2} & -1 \end{bmatrix}$$
+$$H = \frac{\partial h}{\partial \mathbf{x}} = \begin{bmatrix} -\dfrac{m_x - x}{\rho} & -\dfrac{m_y - y}{\rho} & 0 \\ \dfrac{m_y - y}{\rho^2} & -\dfrac{m_x - x}{\rho^2} & -1 \end{bmatrix}$$
 
 The first row of H describes changes in range. Moving towards the marker decreases the range, while moving away increases it. The second row describes changes in bearing caused by sideways movement relative to the marker or by rotation. Its final entry is −1 because increasing the robot’s heading decreases the marker’s relative bearing by the same angle.
 
