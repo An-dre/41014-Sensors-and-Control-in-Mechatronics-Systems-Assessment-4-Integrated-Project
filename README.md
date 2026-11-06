@@ -9,14 +9,14 @@ A TurtleBot3 Waffle Pi in MuJoCo crosses a room with boxes using its 2D LiDAR, t
 
 ## Team
 
-Group 100. Each part has its own folder and write-up.
+Group 100, Spring Semester 2026. Each part has its own folder and write-up.
 
 | Member | Contribution |
 |---|---|
-| Gabriel | **Part A, modelling:** unicycle model, Jacobians, LQR error model, measurement model, controllability and observability analysis. Made the demo video. |
-| Dinel | **Part B, sensing:** encoder and LiDAR noise models, camera calibration in simulation, ArUco detection and frame conversion, measured camera noise R. |
-| Abdul | **Part C, estimation:** the EKF, its noise tuning and consistency study. **Part E, integration (first version):** simulator interface, sensor adapter, LiDAR map and A* planner, the integrated pipeline. |
-| Andre | **Part D, control:** LQR trajectory tracker, docking logic and its closed-loop test bench. **Part E, integration (final version):** robustness study, final integration and repository. Project page. |
+| Gabriel Surya | **Part A, modelling:** unicycle model, Jacobians, LQR error model, measurement model, controllability and observability analysis. Made the demo video. |
+| Dinel Atapattu | **Part B, sensing:** encoder and LiDAR noise models, camera calibration in simulation, ArUco detection and frame conversion, measured camera noise R. |
+| Abdurehman Nasir (Abdul) | **Part C, estimation:** the EKF, its noise tuning and consistency study. **Part E, integration (first version):** simulator interface, sensor adapter, LiDAR map and A* planner, the integrated pipeline. |
+| Andre Arredondo | **Part D, control:** LQR trajectory tracker, docking logic and its closed-loop test bench. **Part E, integration (final version):** robustness study, final integration and repository. Project page. |
 
 ## Results at a glance
 
@@ -69,6 +69,7 @@ part_e_integration/        Part E: pipeline.py, navigation.py, sensor_adapter.py
                            results_robustness_measured_R/
 robotis_tb3/               the robot and scene: sceneforturtle.xml, calib_scene.xml, turtlebot3_waffle_pi.xml,
                            aruco_0.png, the meshes in assets/, ROBOTIS licence
+docs/                      the project page (GitHub Pages): index.html, with copies of the figures in assets/
 ```
 
 Each part folder is a Python package, so modules import each other by part, for example `from part_c_estimation import ekf`. Run everything from the repository root.

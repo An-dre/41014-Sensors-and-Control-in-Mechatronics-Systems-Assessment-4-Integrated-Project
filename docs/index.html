@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TurtleBot3 visual docking · 41014 Group [number]</title>
-<meta name="description" content="41014 Assessment 4, Track A: a TurtleBot3 in MuJoCo navigates around obstacles with LiDAR and docks at an ArUco-marked station using an EKF and an LQR tracker.">
+<title>TurtleBot3 visual docking · 41014 Group 100</title>
+<meta name="description" content="41014 Assessment 4, Track A, Group 100: a TurtleBot3 in MuJoCo crosses a room using its LiDAR and docks at an ArUco-marked station, with an EKF fusing odometry and camera readings and an LQR tracker driving on the estimate.">
 <script>
   window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]] } };
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
 <style>
-  :root { --ink: #202124; --quiet: #5f6368; --line: #dadce0; --soft: #f8f9fa; --accent: #1a73e8; --todo: #fff3bf; }
+  :root { --ink: #202124; --quiet: #5f6368; --line: #dadce0; --soft: #f8f9fa; --accent: #1a73e8; --todo: #fff3bf; --fail: #fce8e6; }
   * { box-sizing: border-box; }
-  html { color-scheme: light; }
+  html { color-scheme: light; scroll-padding-top: 64px; }
   body { margin: 0; background: #ffffff; color: var(--ink); font: 16px/1.6 Inter, "Segoe UI", Helvetica, Arial, sans-serif; }
   header, main, footer { max-width: 980px; margin: 0 auto; padding: 0 20px; }
   header { padding-top: 40px; padding-bottom: 8px; }
@@ -20,9 +20,10 @@
   h2 { font-size: 24px; margin: 56px 0 12px; padding-top: 12px; border-top: 1px solid var(--line); }
   h3 { font-size: 18px; margin: 28px 0 8px; }
   p, ul, ol { margin: 0 0 14px; }
+  li { margin-bottom: 4px; }
   a { color: var(--accent); }
   .eyebrow { color: var(--quiet); font-size: 14px; margin: 0; }
-  .members { margin: 14px 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 6px 20px; }
+  .members { margin: 14px 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 6px 24px; }
   .links a { margin-right: 18px; font-weight: 600; }
   nav { max-width: 980px; margin: 18px auto 0; padding: 10px 20px; position: sticky; top: 0; background: #ffffffee; border-bottom: 1px solid var(--line); z-index: 2; }
   nav a { display: inline-block; margin: 2px 14px 2px 0; font-size: 14px; text-decoration: none; }
@@ -32,12 +33,18 @@
   figure { margin: 18px 0 24px; }
   figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; background: #fff; }
   figcaption { color: var(--quiet); font-size: 14px; margin-top: 6px; }
+  figure a { display: block; }
+  figure.wide { width: min(1240px, calc(100vw - 60px)); position: relative; left: 50%; transform: translateX(-50%); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pair figure { margin: 0 0 18px; }
   .scroll { overflow-x: auto; margin: 0 0 18px; }
   table { border-collapse: collapse; width: 100%; font-size: 15px; }
   th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
   th { background: var(--soft); font-weight: 600; }
-  td.num, th.num { text-align: right; white-space: nowrap; }
+  td.num, th.num { text-align: right; }
+  td.num { white-space: nowrap; }
   tr.pick td { font-weight: 600; }
+  tr.fail td { background: var(--fail); }
   code { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 0.9em; background: var(--soft); padding: 1px 4px; border-radius: 4px; }
   pre { background: var(--soft); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: 14px; line-height: 1.5; }
   pre code { background: none; padding: 0; }
@@ -46,302 +53,451 @@
   .stat b { display: block; font-size: 26px; line-height: 1.2; }
   .stat span { color: var(--quiet); font-size: 14px; }
   .note { border-left: 4px solid var(--accent); background: #f4f8fe; padding: 10px 14px; margin: 16px 0; }
+  details { border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; margin: 0 0 18px; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 10px; }
+  details .scroll { margin-bottom: 4px; }
   mark.todo { background: var(--todo); padding: 0 3px; border-radius: 3px; }
   mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; max-width: 100%; padding: 2px 0; }
   footer { color: var(--quiet); font-size: 14px; padding-top: 30px; padding-bottom: 50px; }
-  @media (max-width: 600px) { h1 { font-size: 26px; } h2 { font-size: 21px; } body { font-size: 15px; } }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+  @media (max-width: 600px) {
+    h1 { font-size: 26px; } h2 { font-size: 21px; } body { font-size: 15px; }
+    header, main, footer { padding: 0 16px; } header { padding-top: 28px; }
+    nav { padding: 8px 16px; overflow-x: auto; white-space: nowrap; }
+  }
 </style>
 </head>
 <body>
 
 <header>
-  <p class="eyebrow">41014 Sensors and Control in Mechatronics Systems · Assessment 4: Integrated Project</p>
+  <p class="eyebrow">41014 Sensors and Control in Mechatronics Systems · Assessment 4: Integrated Project · Spring Semester 2026</p>
   <h1>TurtleBot3 visual waypoint navigation and ArUco docking</h1>
-  <p><b>Track A</b>, in simulation (MuJoCo). <b>Group <mark class="todo">[number]</mark></b></p>
+  <p><b>Track A</b>, mobile robot, in simulation (MuJoCo) · <b>Group 100</b></p>
   <ul class="members">
-    <li><b>Gabriel <mark class="todo">[surname]</mark></b>: Part A, modelling</li>
-    <li><b>Dinel <mark class="todo">[surname]</mark></b>: Part B, sensing</li>
-    <li><b>Abdul <mark class="todo">[surname]</mark></b>: Part C, estimation</li>
-    <li><b>Andre <mark class="todo">[surname]</mark></b>: Part D, control</li>
-    <li><b><mark class="todo">[name]</mark></b>: Part E, integration and robustness</li>
+    <li><b>Gabriel Surya</b>: Part A, modelling; the demo video</li>
+    <li><b>Dinel Atapattu</b>: Part B, sensing</li>
+    <li><b>Abdurehman Nasir (Abdul)</b>: Part C, estimation; Part E, first version</li>
+    <li><b>Andre Arredondo</b>: Part D, control; Part E, final version</li>
   </ul>
   <p class="links">
-    <a href="https://github.com/OWNER/REPO">Code on GitHub</a>
+    <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project">Code on GitHub</a>
     <a href="https://youtu.be/VIDEO_ID">Demo video</a>
+    <a href="#run">Install and run</a>
   </p>
 </header>
 
 <nav aria-label="Sections">
-  <a href="#video">Video</a><a href="#overview">Overview</a><a href="#model">A Model</a><a href="#sensing">B Sensing</a><a href="#estimation">C Estimation</a><a href="#control">D Control</a><a href="#integration">E Integration</a><a href="#ground-truth">Ground truth</a><a href="#run">Run it</a><a href="#contributions">Contributions</a><a href="#ai">AI declaration</a>
+  <a href="#video">Video</a><a href="#overview">Overview</a><a href="#results">Results</a><a href="#model">A Model</a><a href="#sensing">B Sensing</a><a href="#estimation">C Estimation</a><a href="#control">D Control</a><a href="#integration">E Integration</a><a href="#ground-truth">Ground truth</a><a href="#run">Run it</a><a href="#contributions">Team</a><a href="#ai">AI declaration</a>
 </nav>
 
 <main>
 
 <section id="video">
   <h2>Demo video</h2>
+  <p><mark class="todo">[Replace every VIDEO_ID on this page with the video's YouTube ID (Ctrl+H in VS Code), then delete this line.]</mark></p>
   <div class="video">
     <iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID" title="Demo video" allowfullscreen
             allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
   </div>
-  <!-- If the video is an MP4 in docs/media instead, delete the div above and use this line: -->
-  <!-- <video controls preload="metadata" src="media/demo.mp4" style="width:100%"></video> -->
-  <p><a href="https://youtu.be/VIDEO_ID">Watch on YouTube</a> (5 minutes). It shows <mark class="todo">[the nominal run, the disturbed run (90% left motor and camera loss), and the estimate with its ±2σ band next to the true pose; edit to match the video]</mark>.</p>
+  <p><a href="https://youtu.be/VIDEO_ID">Watch on YouTube</a> (5 minutes). <mark class="todo">[One line on what the video shows, for example: a docking run, a disturbed run, and the EKF estimate with its ±2σ band next to the true pose.]</mark></p>
 </section>
 
 <section id="overview">
   <h2>Overview</h2>
-  <p class="lead">The robot starts in a 6 m × 6 m room with four boxes, maps them with its LiDAR, plans a path around them with A*, and docks in front of an ArUco-marked charging station. Every command comes from the EKF's estimate. The simulator's true pose is used only to score runs.</p>
+  <p class="lead">The robot starts in a 6&nbsp;m × 6&nbsp;m room with four boxes. It maps them with its 2D LiDAR, plans around them with A*, and docks in front of an ArUco-marked charging station. An EKF fuses wheel-encoder odometry with the camera's range and bearing to the marker, and an LQR tracker drives on the EKF's estimate. The simulator's true pose is only used to score runs.</p>
   <figure>
-    <img src="assets/pipeline.svg" alt="Pipeline diagram: sensors, Part B sensing, Part C EKF, Part E planner and Part D LQR, Part A wheel conversion, MuJoCo; the true pose goes only to evaluation">
-    <figcaption>One control step. Encoders, the EKF and the controller run at 50 Hz; the camera and LiDAR at 10 Hz.</figcaption>
+    <a href="assets/pipeline.svg" title="Open full size"><img src="assets/pipeline.svg" alt="Pipeline diagram: sensors, Part B sensing, Part C EKF, Part E planner and Part D LQR, Part A wheel conversion, MuJoCo; the true pose goes only to evaluation"></a>
+    <figcaption>One control step. Encoders, the EKF and the controller run at 50&nbsp;Hz, the camera and LiDAR at 10&nbsp;Hz, and the physics in 2&nbsp;ms steps.</figcaption>
   </figure>
   <div class="stats">
-    <div class="stat"><b>27 / 27</b><span>integrated-pipeline trials docked, 0 collisions (random placement, 3 start positions, one disturbed set)</span></div>
-    <div class="stat"><b>3.8 cm</b><span>mean EKF position error on fresh validation seeds, against 9.6 cm for odometry alone</span></div>
-    <div class="stat"><b>≤ 0.4 cm</b><span>largest final docking error along and across the dock (tolerance 3 cm and 2 cm)</span></div>
-    <div class="stat"><b>90 / 90</b><span>controller test-bench trials docked (Part D), plus 30 / 30 with the rendered camera</span></div>
+    <div class="stat"><b>9 / 9</b><span>nominal runs docked from three starts, each with a random placement error; worst final error 0.24&nbsp;cm along, 0.28&nbsp;cm sideways, 1.2°</span></div>
+    <div class="stat"><b>33 / 48</b><span>disturbed runs docked, with five kinds of disturbance each pushed until docking fails</span></div>
+    <div class="stat"><b>3.32&nbsp;cm</b><span>EKF position error (RMS) on the nominal runs, against 8.95&nbsp;cm for odometry alone</span></div>
+    <div class="stat"><b>90 / 90</b><span>controller test-bench runs docked (Part D), plus 30 / 30 with the rendered camera</span></div>
   </div>
+</section>
+
+<section id="results">
+  <h2>Results at a glance</h2>
+  <div class="scroll"><table>
+    <tr><th>What was tested</th><th>Result</th></tr>
+    <tr><td><b>Whole system, nominal:</b> rendered camera, LiDAR map and A*, EKF and LQR; three starts × three seeds, each with a random 2&nbsp;cm / 1.5° placement error the EKF isn't told about</td><td>9/9 docked within 3&nbsp;cm along, 2&nbsp;cm sideways and 3° (worst 0.24&nbsp;cm, 0.28&nbsp;cm, 1.2°), no collisions. EKF position error 3.32&nbsp;cm RMS against 8.95&nbsp;cm for odometry alone (63&nbsp;% less).</td></tr>
+    <tr><td><b>Robustness:</b> camera loss, a weak motor, LiDAR noise, placement error and encoder noise, each pushed until it breaks; 16 disturbed conditions × 3 seeds</td><td>33 of 48 docked. Copes with 30&nbsp;s of camera loss, a left motor at 60&nbsp;%, 3× the LiDAR noise, 6× the placement error and 30× the encoder noise. Fails with 40&nbsp;s or more of camera loss, a 50&nbsp;% motor and 10× the LiDAR noise, each traced to its cause.</td></tr>
+    <tr><td><b>Estimator</b> (Part C): tuning on identical sensor logs, then fresh seeds</td><td>9/9 fresh seeds docked; EKF error 3.60&nbsp;cm RMS against 9.53&nbsp;cm (62&nbsp;% less), NEES 0.94 (conservative). Part B's measured R gave the same accuracy but could lock the camera out under disturbances, so the design values were kept.</td></tr>
+    <tr><td><b>Controller</b> (Part D), on its own test routes</td><td>90/90 docked with the fast camera stand-in and 30/30 with the rendered camera; docking error 0.06 ± 0.07&nbsp;cm along, 0.01 ± 0.15&nbsp;cm sideways, −0.07 ± 0.64° over the 90.</td></tr>
+    <tr><td><b>Camera</b> (Part B)</td><td>Calibrated focal length within 0.1&nbsp;px of the true value (0.097&nbsp;px reprojection error); range bias about 10&nbsp;mm and spread under 7&nbsp;mm out to 2&nbsp;m; measured R of 12.3&nbsp;mm and 0.021°.</td></tr>
+    <tr><td><b>Model</b> (Part A)</td><td>Within 1&nbsp;cm and 1° of the MuJoCo robot over 1&nbsp;m of travel or a full turn, once its floor contact is corrected (38&nbsp;cm and 106° off without).</td></tr>
+  </table></div>
 </section>
 
 <section id="model">
   <h2>Part A: model</h2>
-  <p>The state is the robot's pose in the world frame, and the inputs are forward speed and turn rate. Robot numbers come from <code>robotis_tb3/turtlebot3_waffle_pi.xml</code>: wheel radius \(r = 0.033\) m, wheel separation \(L = 0.288\) m, wheel speed limit ±7.88 rad/s (so at most 0.26 m/s), control period \(\Delta t = 0.02\) s.</p>
+  <p>The state is the robot's pose in the fixed room frame (origin at the room centre, x towards the dock), and the inputs are forward speed and turn rate. Robot numbers come from <code>robotis_tb3/turtlebot3_waffle_pi.xml</code>: wheel radius \(r = 0.033\) m, wheel separation \(L = 0.288\) m, wheel speed limit ±7.88&nbsp;rad/s (top speed 0.26&nbsp;m/s), and a model step of \(\Delta t = 0.02\) s. Full write-up: <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project/blob/main/part_a_modelling/PART_A_MODELLING.md">PART_A_MODELLING.md</a>.</p>
   \[ \mathbf{x} = \begin{bmatrix} x & y & \theta \end{bmatrix}^\top, \qquad \mathbf{u} = \begin{bmatrix} v & \omega \end{bmatrix}^\top, \qquad v = \frac{r(\omega_R + \omega_L)}{2}, \qquad \omega = \frac{r(\omega_R - \omega_L)}{L} \]
-  <h3>Motion model and its Jacobians (used by the EKF)</h3>
+  <h3>Motion model and its Jacobians (EKF)</h3>
   \[ \dot x = v\cos\theta, \quad \dot y = v\sin\theta, \quad \dot\theta = \omega \qquad\Rightarrow\qquad \mathbf{x}_{k+1} = \mathbf{x}_k + \Delta t \begin{bmatrix} v_k\cos\theta_k \\ v_k\sin\theta_k \\ \omega_k \end{bmatrix} \]
   \[ F = \frac{\partial f}{\partial \mathbf{x}} = \begin{bmatrix} 1 & 0 & -v_k\Delta t\sin\theta_k \\ 0 & 1 & v_k\Delta t\cos\theta_k \\ 0 & 0 & 1 \end{bmatrix}, \qquad G = \frac{\partial f}{\partial \mathbf{u}} = \begin{bmatrix} \Delta t\cos\theta_k & 0 \\ \Delta t\sin\theta_k & 0 \\ 0 & \Delta t \end{bmatrix} \]
-  <h3>Tracking-error model (used by the LQR)</h3>
-  <p>The error to the reference is rotated into the robot frame (ahead, left, heading). Linearising about the reference speeds and dropping products of small terms gives</p>
+  <h3>Tracking-error model (LQR)</h3>
+  <p>The error to the reference is rotated into the robot frame: \(e_x\) ahead, \(e_y\) to the left, \(e_\theta\) heading. Linearising about the reference speeds and dropping products of small terms gives</p>
   \[ \mathbf{e}_{k+1} = A\,\mathbf{e}_k + B\,\delta\mathbf{u}_k, \qquad A = \begin{bmatrix} 1 & \omega_{ref}\Delta t & 0 \\ -\omega_{ref}\Delta t & 1 & v_{ref}\Delta t \\ 0 & 0 & 1 \end{bmatrix}, \qquad B = \begin{bmatrix} -\Delta t & 0 \\ 0 & 0 \\ 0 & -\Delta t \end{bmatrix} \]
   <h3>Camera measurement model</h3>
-  \[ \mathbf{z} = h(\mathbf{x}) = \begin{bmatrix} \sqrt{(m_x - x)^2 + (m_y - y)^2} \\ \operatorname{atan2}(m_y - y,\ m_x - x) - \theta \end{bmatrix}, \qquad H = \begin{bmatrix} -\frac{m_x - x}{\rho} & -\frac{m_y - y}{\rho} & 0 \\ \frac{m_y - y}{\rho^2} & -\frac{m_x - x}{\rho^2} & -1 \end{bmatrix} \]
+  \[ \mathbf{z} = h(\mathbf{x}) = \begin{bmatrix} \rho \\ \beta \end{bmatrix} = \begin{bmatrix} \sqrt{(m_x - x)^2 + (m_y - y)^2} \\ \operatorname{atan2}(m_y - y,\ m_x - x) - \theta \end{bmatrix}, \qquad H = \begin{bmatrix} -\frac{m_x - x}{\rho} & -\frac{m_y - y}{\rho} & 0 \\ \frac{m_y - y}{\rho^2} & -\frac{m_x - x}{\rho^2} & -1 \end{bmatrix} \]
   <h3>Assumptions</h3>
   <ul>
-    <li><b>Kinematic model.</b> The wheel servos (gain 5 in the XML) reach the commanded speed within a control step, so motor dynamics are left out.</li>
-    <li><b>No wheel slip.</b> This did not hold for the model as supplied, which slipped about 15% driving straight and 30% turning. Giving the caster balls contact priority and lifting the chassis collision shape 2 mm clear of the floor brought slip under 1% (<code>part_e_integration/sim.py</code>, found in Part D).</li>
-    <li><b>Flat floor, small errors.</b> The error model assumes small errors and a reference speed that is constant over one step.</li>
+    <li><b>Kinematic model.</b> The wheel servos (velocity gain 5 in the XML) reach the commanded speed within about one step, so motor torque, wheel inertia and friction are left out.</li>
+    <li><b>No wheel slip.</b> This only holds once the floor contact is corrected; the model check below shows what happens without it.</li>
+    <li><b>Flat floor and small errors.</b> The error model also assumes reference speeds that are constant over one step.</li>
   </ul>
   <h3>Controllability and observability</h3>
   <div class="scroll"><table>
     <tr><th>Check</th><th>Matrix</th><th class="num">Rank</th><th>Meaning</th></tr>
     <tr><td>Controllability, \(v_{ref} = 0.2\) m/s</td><td>\([B,\ AB,\ A^2B]\)</td><td class="num">3</td><td>All three errors can be driven to zero.</td></tr>
-    <tr><td>Controllability, \(v_{ref} = 0\)</td><td>\([B,\ AB,\ A^2B]\)</td><td class="num">2</td><td>A sideways error can't be fixed while stopped, so the robot corrects it on the approach.</td></tr>
+    <tr><td>Controllability, \(v_{ref} = 0\)</td><td>\([B,\ AB,\ A^2B]\)</td><td class="num">2</td><td>A sideways error can't be fixed while stopped, so the robot corrects it on the approach and docks while still moving.</td></tr>
     <tr><td>Observability, encoders only</td><td>\(C = 0\)</td><td class="num">0</td><td>Odometry never measures the pose, so its error grows.</td></tr>
     <tr><td>Observability, camera full pose</td><td>\(C = I_3\)</td><td class="num">3</td><td>Would fix every state.</td></tr>
-    <tr><td>Observability, range and bearing, moving or turning</td><td>\([H_0;\ H_1F_0;\ H_2F_1F_0]\)</td><td class="num">2</td><td>One marker leaves a rotation about the marker unobservable. The known start and odometry keep the local EKF working.</td></tr>
+    <tr><td>Observability, range and bearing (parked, moving or turning)</td><td>\([H_0;\ H_1F_0;\ H_2F_1F_0]\)</td><td class="num">2</td><td>Circling the marker while turning by the same angle leaves both readings unchanged. The known start and odometry keep the local EKF working.</td></tr>
   </table></div>
   <h3>Model check against MuJoCo</h3>
-  <p><mark class="todo">[Gabriel: re-run validatemodel.py after it loads the robot through sim.load(), then replace this line.]</mark> With wheel speeds of 2 and 4 rad/s for 10 s, odometry through the model ends 0.8 cm and 0.9° from MuJoCo's pose with the contact fix, and 37.6 cm and 57.8° without it.</p>
+  <p><code>validatemodel.py</code> drives the robot with fixed wheel speeds, integrates the model from the wheel encoders, and compares the result with the simulator's pose, which is read only to score the model.</p>
+  <div class="scroll"><table>
+    <tr><th>Manoeuvre</th><th>Robot as the XML loads: position, heading error</th><th>With the contact correction</th></tr>
+    <tr><td>Straight, 7.5&nbsp;s</td><td>15.0&nbsp;cm, +0.7°</td><td>0.4&nbsp;cm, 0.0°</td></tr>
+    <tr><td>Spin on the spot, 9&nbsp;s</td><td>5.2&nbsp;cm, +106.0°</td><td>0.0&nbsp;cm, +1.0°</td></tr>
+    <tr><td>Arc (left wheel 2, right 4&nbsp;rad/s), 10&nbsp;s</td><td>38.1&nbsp;cm, +58.5°</td><td>0.8&nbsp;cm, +0.9°</td></tr>
+  </table></div>
+  <p>As the XML loads, the robot travels 15&nbsp;% less than its wheels say and turns about 30&nbsp;% less: the chassis collision shape rests on the floor, and the casters take the floor's friction. <code>sim.load()</code> gives the casters contact priority and lifts the chassis shape 2&nbsp;mm clear of the floor, and every part loads the scene through it. With the correction, the model matches MuJoCo within 1&nbsp;cm and 1° over about 1&nbsp;m of travel or a full turn; the EKF's Q covers what is left.</p>
 </section>
 
 <section id="sensing">
   <h2>Part B: sensing and frames</h2>
   <figure>
-    <img src="assets/frames.svg" alt="Coordinate frames: world frame at the room centre, robot base, camera, LiDAR and marker, with the transforms between them">
-    <figcaption>Frames and transforms. The base pose in the world frame is the EKF estimate; everything else is a fixed mount or a known map value. <mark class="todo">[Dinel: check against your frame notes.]</mark></figcaption>
+    <a href="assets/frames.svg" title="Open full size"><img src="assets/frames.svg" alt="Coordinate frames: world frame at the room centre, robot base, camera, LiDAR and marker, with the transforms between them"></a>
+    <figcaption>Frames and transforms. The base pose in the world frame is the EKF estimate; the sensor mounts and the marker position are fixed values from the robot and scene files.</figcaption>
   </figure>
+  <p>A marker reading goes from the OpenCV camera frame (x right, y down, z forward) to the robot base, and the EKF's pose takes it on to the world. Full write-up: <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project/blob/main/part_b_sensing/PART_B_SENSING.md">PART_B_SENSING.md</a>.</p>
+  \[ \mathbf{p}_B = R_{BC}\,\mathbf{p}_C + \mathbf{t}_C, \qquad R_{BC} = \begin{bmatrix} 0 & 0 & 1 \\ -1 & 0 & 0 \\ 0 & -1 & 0 \end{bmatrix}, \qquad \mathbf{t}_C = \begin{bmatrix} 0.07 \\ 0 \\ 0.15 \end{bmatrix}\ \text{m} \]
+  \[ \rho = \sqrt{x_B^2 + y_B^2}, \qquad \beta = \operatorname{atan2}(y_B, x_B) \]
   <div class="scroll"><table>
     <tr><th>Sensor</th><th>Model in the code</th><th>Why</th></tr>
-    <tr><td>Wheel encoders, 50 Hz</td><td>Angle rounded to 4096 ticks per turn, plus Gaussian noise of 1 tick</td><td>The Dynamixel servo's resolution; the extra tick stands in for backlash</td></tr>
-    <tr><td>2D LiDAR, 10 Hz</td><td>36 beams every 10°, 0.12 to 3.5 m. σ = 7.5 mm below 0.5 m, else 2.5% of range. No return becomes 3.5 m</td><td>Half the LDS-01 datasheet bounds (±15 mm, ±5%) taken as one standard deviation</td></tr>
-    <tr><td>RGB camera, 10 Hz</td><td>640 × 480, 60° vertical field of view, so f = 415.7 px and the centre is (320, 240); no distortion</td><td>Pinhole model of MuJoCo's camera</td></tr>
-    <tr><td>ArUco marker</td><td>DICT_4X4_50, id 0, 0.16 m black square, pose from <code>solvePnP</code> (IPPE square)</td><td>The marker plate is 0.20 m with a white border</td></tr>
+    <tr><td>Wheel encoders, 50&nbsp;Hz</td><td>Angle rounded to 4096 ticks per turn, plus Gaussian noise of one tick; differenced into \((v, \omega)\) with Part A's wheel conversion</td><td>The servo's resolution; the extra tick stands in for backlash and small slip</td></tr>
+    <tr><td>2D LiDAR, 10&nbsp;Hz</td><td>36 beams every 10°, 0.12 to 3.5&nbsp;m; σ = 7.5&nbsp;mm below 0.5&nbsp;m, else 2.5&nbsp;% of the range; no return becomes 3.5&nbsp;m</td><td>The LDS-01 datasheet's ±15&nbsp;mm and ±5&nbsp;%, read as two standard deviations</td></tr>
+    <tr><td>RGB camera, 10&nbsp;Hz</td><td>640 × 480 pinhole with a 60° vertical field of view, so f = 415.69&nbsp;px</td><td>MuJoCo's camera; checked by calibration below</td></tr>
+    <tr><td>ArUco marker</td><td>DICT_4X4_50 id 0, 0.16&nbsp;m black square, sub-pixel corners, pose from <code>solvePnP</code> (IPPE square)</td><td>The 0.20&nbsp;m plate has a white border</td></tr>
   </table></div>
-  <p><b>Rejected camera readings.</b> Wrong marker id, a marker under 30 px a side (about 2.2 m away), a failed PnP solve, or a pose behind the camera or past 3.5 m. The EKF's innovation gate is a second check.</p>
+  <p><b>Rejected camera readings:</b> a wrong marker id, a marker under 30&nbsp;px a side (beyond about 2.2&nbsp;m), a failed or non-finite PnP solve, or a pose behind the camera or past 3.5&nbsp;m. The EKF's innovation gate is a second check.</p>
   <h3>Calibration</h3>
-  <p><mark class="todo">[Dinel: calibration method, number of views, reprojection error, and the calibrated K compared with the nominal K above.]</mark></p>
-  <h3>Measured camera noise</h3>
-  <p><mark class="todo">[Dinel: range and bearing bias and standard deviation at three distances and angles. Until this is in, the EKF uses design values of 3 cm and 1°.]</mark></p>
+  <p>The project scene has no calibration target, so <code>calib_scene.xml</code> puts an 8 × 6 chessboard of 0.1&nbsp;m squares in front of the same robot and camera. Photos from 27 poses (3 distances × 3 sideways offsets × 3 headings) went into <code>cv2.calibrateCamera</code>. All 27 were used, with a reprojection error of 0.097&nbsp;px and every distortion coefficient under 0.003.</p>
+  <div class="scroll"><table>
+    <tr><th>Parameter</th><th class="num">True K (pinhole)</th><th class="num">Calibrated</th><th class="num">Difference</th></tr>
+    <tr><td>\(f_x\)</td><td class="num">415.69</td><td class="num">415.79</td><td class="num">+0.09&nbsp;px</td></tr>
+    <tr><td>\(f_y\)</td><td class="num">415.69</td><td class="num">415.77</td><td class="num">+0.08&nbsp;px</td></tr>
+    <tr><td>\(c_x\)</td><td class="num">320.00</td><td class="num">319.61</td><td class="num">−0.39&nbsp;px</td></tr>
+    <tr><td>\(c_y\)</td><td class="num">240.00</td><td class="num">239.34</td><td class="num">−0.66&nbsp;px</td></tr>
+  </table></div>
+  <p>The focal length confirms the pinhole formula. The image centre moved by about half a pixel because pixel coordinates are measured at pixel centres, and that half pixel had been causing a bearing bias.</p>
+  <h3>Measured camera noise and R</h3>
+  <p>The robot was parked facing the marker at 1.0, 1.5 and 2.0&nbsp;m, with 150 photos at each. The simulator is perfectly repeatable, so pixel noise (σ = 2 grey levels) and pose jitter (σ = 2&nbsp;mm, 0.2°) were added. With the calibrated K:</p>
+  <div class="scroll"><table>
+    <tr><th>Distance</th><th class="num">Seen</th><th class="num">Range bias</th><th class="num">Range σ</th><th class="num">Bearing bias</th><th class="num">Bearing σ</th></tr>
+    <tr><td>1.0&nbsp;m</td><td class="num">150/150</td><td class="num">0.1&nbsp;mm</td><td class="num">0.2&nbsp;mm</td><td class="num">0.016°</td><td class="num">0.014°</td></tr>
+    <tr><td>1.5&nbsp;m</td><td class="num">150/150</td><td class="num">4.6&nbsp;mm</td><td class="num">2.9&nbsp;mm</td><td class="num">0.015°</td><td class="num">0.006°</td></tr>
+    <tr><td>2.0&nbsp;m</td><td class="num">150/150</td><td class="num">10.4&nbsp;mm</td><td class="num">6.7&nbsp;mm</td><td class="num">0.015°</td><td class="num">0.003°</td></tr>
+  </table></div>
+  <p>Range spread grows with the square of the distance, \(\sigma_d = \sigma_w d^2 / (f s)\), as the marker shrinks from about 66&nbsp;px to 33&nbsp;px wide. Bearing is far more precise: 0.003° at 2&nbsp;m is about 0.1&nbsp;mm sideways. Calibration cut the bearing bias from 0.066° to 0.015°. Taking the worst case, at 2&nbsp;m, and folding the bias in gives Part B's measured R:</p>
+  \[ R_{measured} = \operatorname{diag}\left(b_\rho^2 + \sigma_\rho^2,\ b_\beta^2 + \sigma_\beta^2\right) = \operatorname{diag}\left((12.3\ \text{mm})^2,\ (0.021^\circ)^2\right) \]
+  <p>Part C compared this measured R with its design R; <a href="#lockout">its results</a> explain why the pipeline keeps the design value.</p>
+  <h3>Problems found and fixed</h3>
+  <ul>
+    <li><b>Range 25&nbsp;% too long</b> (2.46&nbsp;m against 1.89&nbsp;m): the detected marker is the 0.16&nbsp;m black square, not the 0.20&nbsp;m plate, and the camera sits 0.07&nbsp;m ahead of the base, not 0.086&nbsp;m.</li>
+    <li><b>Range biased long by up to 8.5&nbsp;cm:</b> ArUco corners snapped to whole pixels, so the marker could look about 1.5&nbsp;px smaller than it is. Sub-pixel corner refinement cut the worst bias in the noise test from 34&nbsp;mm to 10&nbsp;mm, and the measured R from 38.5&nbsp;mm to 12.3&nbsp;mm.</li>
+    <li><b>Calibration using 1 of 27 photos:</b> MuJoCo drew the LiDAR rays across the chessboard. Making them transparent in the calibration scene fixed it.</li>
+  </ul>
 </section>
 
 <section id="estimation">
   <h2>Part C: estimation</h2>
-  <p>An extended Kalman filter fuses wheel odometry (predict, 50 Hz) with range and bearing to the known marker (update, up to 10 Hz). Full report: <a href="https://github.com/OWNER/REPO/blob/main/part_c_estimation/PART_C_ESTIMATION.md">PART_C_ESTIMATION.md</a>.</p>
-  \[ \hat{\mathbf{x}}^- = f(\hat{\mathbf{x}}, \mathbf{u}, \Delta t), \qquad P^- = F P F^\top + Q \]
-  \[ \boldsymbol\nu = \mathbf{z} - h(\hat{\mathbf{x}}^-), \qquad S = H P^- H^\top + R, \qquad K = P^- H^\top S^{-1} \]
+  <p>An extended Kalman filter fuses wheel odometry (predict, 50&nbsp;Hz) with range and bearing to the known marker (update, up to 10&nbsp;Hz). It starts at the intended placement and is never told the real one. Full write-up: <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project/blob/main/part_c_estimation/PART_C_ESTIMATION.md">PART_C_ESTIMATION.md</a>.</p>
+  \[ \hat{\mathbf{x}}^- = f(\hat{\mathbf{x}}, \mathbf{u}, \Delta t), \qquad P^- = F P F^\top + Q\,\frac{\Delta t}{0.02\ \text{s}} \]
+  \[ \boldsymbol\nu = \mathbf{z} - h(\hat{\mathbf{x}}^-), \qquad S = H P^- H^\top + R, \qquad K = P^- H^\top S^{-1}, \qquad \text{NIS} = \boldsymbol\nu^\top S^{-1} \boldsymbol\nu \]
   \[ \hat{\mathbf{x}} = \hat{\mathbf{x}}^- + K\boldsymbol\nu, \qquad P = (I - KH)\,P^-(I - KH)^\top + KRK^\top \]
   <div class="scroll"><table>
     <tr><th>Setting</th><th>Value</th><th>Reason</th></tr>
-    <tr><td>Q, per 20 ms</td><td>diag(1 mm, 1 mm, 0.2°)²</td><td>Motion the kinematic model misses; kept after the tuning study below</td></tr>
-    <tr><td>R, per reading</td><td>diag(3 cm, 1°)²</td><td>Design value until Part B's measured noise is in</td></tr>
-    <tr><td>Initial P</td><td>diag(2 cm, 2 cm, 1.5°)²</td><td>The placement error used in random trials</td></tr>
-    <tr><td>Gate</td><td>reject if NIS &gt; 9.21</td><td>99% chi-square bound for two measurements</td></tr>
+    <tr><td>Q, per 20&nbsp;ms</td><td>diag(1&nbsp;mm, 1&nbsp;mm, 0.2°)²</td><td>Motion the kinematic model misses; a design value</td></tr>
+    <tr class="pick"><td>R, per reading (used)</td><td>diag(3&nbsp;cm, 1°)²</td><td>Design value, kept after the study below</td></tr>
+    <tr><td>R, measured by Part B (compared)</td><td>diag(12.3&nbsp;mm, 0.021°)²</td><td>Worst case of Part B's head-on noise test, bias included</td></tr>
+    <tr><td>Initial P</td><td>diag(2&nbsp;cm, 2&nbsp;cm, 1.5°)²</td><td>The placement error used in random trials</td></tr>
+    <tr><td>Gate</td><td>reject if NIS &gt; 9.21</td><td>99&nbsp;% chi-square bound for two measurements</td></tr>
   </table></div>
-  <h3>Tuning: consistency against responsiveness</h3>
-  <p>Nine rendered-camera trials were recorded, then replayed through each noise setting, so every variant sees identical inputs.</p>
+  <p>The bearing innovation is wrapped to [−π, π), the Joseph form keeps P positive definite, and linear solves replace matrix inverses. With no marker in view, the filter keeps predicting from odometry.</p>
+  <h3>Tuning on identical sensor logs</h3>
+  <p>Nine rendered-camera trials were driven with the design values and recorded: three from each start, the south ones with the left motor at 90&nbsp;% and the camera off from 25 to 30&nbsp;s. Their logs were then replayed through every setting, so each setting sees exactly the same inputs. A bad reading is a camera range more than 3&nbsp;cm from the truth, scored afterwards: 10 of the 2438 readings, all 5–11&nbsp;cm short and seen 10–23° off the camera axis.</p>
   <div class="scroll"><table>
-    <tr><th>Variant</th><th class="num">Mean position RMSE (cm)</th><th class="num">Mean NEES</th><th class="num">x within ±2σ</th><th class="num">Rejects per trial</th></tr>
-    <tr class="pick"><td>Kept: Q × 1, R × 1</td><td class="num">3.77</td><td class="num">2.23</td><td class="num">88.2%</td><td class="num">1.22</td></tr>
-    <tr><td>Q × 0.1</td><td class="num">3.66</td><td class="num">6.32</td><td class="num">72.6%</td><td class="num">1.22</td></tr>
-    <tr><td>Q × 10</td><td class="num">3.97</td><td class="num">0.72</td><td class="num">99.2%</td><td class="num">1.11</td></tr>
-    <tr><td>R × 0.1</td><td class="num">3.90</td><td class="num">6.70</td><td class="num">81.4%</td><td class="num">5.67</td></tr>
-    <tr><td>R × 10</td><td class="num">3.70</td><td class="num">0.82</td><td class="num">99.5%</td><td class="num">0.00</td></tr>
-    <tr><td>Encoder odometry only</td><td class="num">9.84</td><td class="num">0.43</td><td class="num">100%</td><td class="num">0</td></tr>
+    <tr><th>Setting</th><th class="num">Position RMSE (cm)</th><th class="num">Mean NEES</th><th class="num">x inside ±2σ</th><th class="num">Bad readings rejected</th><th class="num">Good readings rejected</th></tr>
+    <tr class="pick"><td>Design Q and R (used)</td><td class="num">3.71</td><td class="num">0.67</td><td class="num">100&nbsp;%</td><td class="num">3 of 10</td><td class="num">0</td></tr>
+    <tr><td>Q ×0.1</td><td class="num">3.64</td><td class="num">1.76</td><td class="num">95.8&nbsp;%</td><td class="num">3 of 10</td><td class="num">0</td></tr>
+    <tr><td>Q ×10</td><td class="num">3.74</td><td class="num">0.19</td><td class="num">100&nbsp;%</td><td class="num">2 of 10</td><td class="num">0</td></tr>
+    <tr><td>R ×0.1</td><td class="num">3.71</td><td class="num">1.41</td><td class="num">97.8&nbsp;%</td><td class="num">10 of 10</td><td class="num">0</td></tr>
+    <tr><td>R ×10</td><td class="num">3.71</td><td class="num">0.42</td><td class="num">100&nbsp;%</td><td class="num">0 of 10</td><td class="num">0</td></tr>
+    <tr><td>Design Q, measured R</td><td class="num">3.71</td><td class="num">1.45</td><td class="num">98.5&nbsp;%</td><td class="num">10 of 10</td><td class="num">0</td></tr>
+    <tr><td>Q ×0.1, measured R</td><td class="num">3.62</td><td class="num">3.63</td><td class="num">85.5&nbsp;%</td><td class="num">10 of 10</td><td class="num">0</td></tr>
+    <tr><td>Odometry only</td><td class="num">9.80</td><td class="num">0.42</td><td class="num">100&nbsp;%</td><td class="num">–</td><td class="num">–</td></tr>
   </table></div>
-  <p>A smaller Q saves 0.11 cm but makes the filter overconfident (NEES 6.3). A smaller R rejects nearly five times as many readings. The baseline is the compromise. It is not fully consistent: mean NIS is 0.16 against an ideal of 2, because the rendered camera is close to deterministic.</p>
+  <p><b>Accuracy hardly depends on Q and R.</b> Every setting is within 0.1&nbsp;cm of 3.7&nbsp;cm, against 9.8&nbsp;cm for odometry alone, because the error is decided before the first camera fix, 17–32&nbsp;s into a run. <b>On these nominal runs, smaller values describe the filter better:</b> the design NEES of 0.67 against an ideal of 3 means the filter is conservative, and Part B's measured R rejects all ten bad readings while keeping all 2428 good ones.</p>
+  <h3 id="lockout">Consistency against robustness: why the design values stay</h3>
+  <p>Part E ran its robustness study with the measured R in the loop too. In one run with the left motor at 80&nbsp;%, the very first camera reading was a bad one: 10&nbsp;cm short, seen 25° off the axis. The estimate was still uncertain, so the gate let it in, and with an R that small the update dragged the estimate 9&nbsp;cm out and collapsed its covariance around the wrong place. The gate then rejected every good reading for 29&nbsp;s, 278 of them. The design R took the same reading with less weight and was back within 3&nbsp;cm two seconds later.</p>
+  <div class="scroll"><table>
+    <tr><th>Setting, replayed on the 57 robustness runs</th><th class="num">Position RMSE (cm)</th><th class="num">Mean NEES</th><th class="num">Bad readings rejected</th><th class="num">Good readings rejected</th></tr>
+    <tr class="pick"><td>Design Q and R (used)</td><td class="num">3.52</td><td class="num">0.84</td><td class="num">52 of 103</td><td class="num">0</td></tr>
+    <tr><td>Design Q, measured R (driven live)</td><td class="num">3.64</td><td class="num">1.71</td><td class="num">96 of 103</td><td class="num">374</td></tr>
+    <tr><td>Q ×0.1</td><td class="num">3.53</td><td class="num">2.47</td><td class="num">51 of 103</td><td class="num">311</td></tr>
+    <tr><td>Q ×0.1, measured R</td><td class="num">3.54</td><td class="num">4.74</td><td class="num">100 of 103</td><td class="num">725</td></tr>
+  </table></div>
+  <p><b>Decision: the design Q and R.</b> Accuracy is the same for every setting, and the design values never rejected a good reading in any of the tuning, validation or robustness runs, so the pipeline accepts a conservative NEES as the price. On the real robot, Part B's measured R would be the starting point, with a guard that re-opens the gate when several readings agree with each other but not with the estimate.</p>
   <h3>Fresh-seed validation</h3>
+  <p>The same three scenarios with fresh seeds, driven twice in closed loop: once with the chosen settings and once with the measured R, from the same placement errors and sensor noise.</p>
   <div class="scroll"><table>
-    <tr><th>Scenario</th><th class="num">Docked</th><th class="num">Collisions</th><th class="num">EKF RMSE (cm)</th><th class="num">Odometry RMSE (cm)</th></tr>
-    <tr><td>West start</td><td class="num">3/3</td><td class="num">0</td><td class="num">2.99</td><td class="num">6.51</td></tr>
-    <tr><td>North start</td><td class="num">3/3</td><td class="num">0</td><td class="num">4.74</td><td class="num">13.33</td></tr>
-    <tr><td>South start, left motor at 90%, camera off 25 to 30 s</td><td class="num">3/3</td><td class="num">0</td><td class="num">3.70</td><td class="num">8.82</td></tr>
+    <tr><th></th><th class="num">Design Q and R (used)</th><th class="num">Design Q, measured R</th></tr>
+    <tr><td>Docked within tolerance, no collisions</td><td class="num">9/9</td><td class="num">9/9</td></tr>
+    <tr><td>EKF position RMSE (cm)</td><td class="num">3.60</td><td class="num">3.64</td></tr>
+    <tr><td>Odometry-only RMSE (cm)</td><td class="num">9.53</td><td class="num">9.54</td></tr>
+    <tr><td>Mean NEES</td><td class="num">0.94</td><td class="num">1.74</td></tr>
+    <tr><td>Inside ±2σ, x / y / heading</td><td class="num">100 / 99.6 / 99.8&nbsp;%</td><td class="num">97.8 / 99.6 / 99.8&nbsp;%</td></tr>
+    <tr><td>Bad readings rejected by the live gate</td><td class="num">10 of 21</td><td class="num">32 of 34</td></tr>
+    <tr><td>Good readings rejected</td><td class="num">0</td><td class="num">0</td></tr>
+    <tr><td>Worst final error: along / sideways / heading</td><td class="num">0.42&nbsp;cm / 0.24&nbsp;cm / 0.98°</td><td class="num">0.41&nbsp;cm / 0.24&nbsp;cm / 0.95°</td></tr>
   </table></div>
+  <p>With the chosen settings the EKF's position error is 62&nbsp;% below odometry overall, and lower in all nine runs: west 2.67 against 6.48&nbsp;cm, north 4.66 against 13.30&nbsp;cm, and 3.47 against 8.80&nbsp;cm in the south runs with the weak motor and the camera gap.</p>
   <figure>
-    <img src="assets/c_estimator_diagnostics.png" alt="Worst tuning trial: path, and x, y and heading estimates with ±2 standard deviation bands next to the true values">
-    <figcaption>Worst tuning trial. Odometry drifts until the first marker fix at about 31 s; the band then shrinks sharply.</figcaption>
+    <a href="assets/c_estimator_diagnostics.png" title="Open full size"><img src="assets/c_estimator_diagnostics.png" alt="Worst tuning trial: path on the LiDAR map, and x, y and heading estimates with their ±2 standard deviation bands next to the true values"></a>
+    <figcaption>Worst tuning trial (north, seed 1101). For about 30&nbsp;s before the camera sees the marker, the estimate drifts 14&nbsp;cm while its ±2σ band widens to cover it. The first fix, at 29.6&nbsp;s, pulls the estimate back in one step and the band collapses.</figcaption>
   </figure>
 </section>
 
 <section id="control">
   <h2>Part D: control</h2>
-  <p>A discrete LQR tracker drives the planned route and the dock approach, using only the EKF estimate. Full report: <a href="https://github.com/OWNER/REPO/blob/main/part_d_control/PART_D_CONTROL.md">PART_D_CONTROL.md</a>.</p>
-  \[ \delta\mathbf{u}_k = -K(v_{ref}, \omega_{ref})\,\mathbf{e}_k, \qquad K = (R + B^\top P B)^{-1} B^\top P A, \qquad \mathbf{u} = \mathbf{u}_{ref} + \delta\mathbf{u} \]
+  <p>A discrete LQR tracker drives each planned leg and the dock approach, using only the EKF estimate. Full write-up: <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project/blob/main/part_d_control/PART_D_CONTROL.md">PART_D_CONTROL.md</a>.</p>
+  \[ \mathbf{u} = \mathbf{u}_{ref} - K(v_{ref}, \omega_{ref})\,\mathbf{e} \]
+  \[ K = \left(R_u + B^\top P B\right)^{-1} B^\top P A, \qquad P = A^\top P A - A^\top P B\,K + Q_e \]
   <div class="scroll"><table>
-    <tr><th>Weight (Bryson's rule)</th><th class="num">Largest acceptable value</th><th>Why</th></tr>
-    <tr><td>\(e_x\), along the path</td><td class="num">0.10 m</td><td>Running a little late is harmless</td></tr>
-    <tr><td>\(e_y\), across the path</td><td class="num">0.05 m</td><td>About 0.25 m to the boxes, and docking needs it centred</td></tr>
+    <tr><th>Weight (Bryson's rule, 1 / largest²)</th><th class="num">Largest acceptable value</th><th>Why</th></tr>
+    <tr><td>\(e_x\), along the path</td><td class="num">0.10&nbsp;m</td><td>Running a little late is harmless</td></tr>
+    <tr><td>\(e_y\), across the path</td><td class="num">0.05&nbsp;m</td><td>About 0.25&nbsp;m to the boxes, and docking needs it centred</td></tr>
     <tr><td>\(e_\theta\), heading</td><td class="num">10°</td><td></td></tr>
-    <tr><td>\(\delta v\), extra speed</td><td class="num">0.10 m/s</td><td>Cruise 0.15 m/s, top speed 0.26 m/s</td></tr>
-    <tr><td>\(\delta\omega\), extra turn rate</td><td class="num">0.60 rad/s</td><td>At 0.15 m/s a wheel saturates past 0.76 rad/s</td></tr>
+    <tr><td>\(\delta v\), extra speed</td><td class="num">0.10&nbsp;m/s</td><td>Cruise 0.15&nbsp;m/s, top speed 0.26&nbsp;m/s</td></tr>
+    <tr><td>\(\delta\omega\), extra turn rate</td><td class="num">0.60&nbsp;rad/s</td><td>At 0.15&nbsp;m/s a wheel saturates past 0.76&nbsp;rad/s</td></tr>
   </table></div>
   <ul>
-    <li><b>Gains.</b> On a straight at 0.15 m/s: \(\delta v = 0.99\,e_x\), \(\delta\omega = 11.5\,e_y + 3.8\,e_\theta\). Time constants are 1.0 s along, 0.30 s in heading and 1.9 s sideways.</li>
-    <li><b>Gain schedule.</b> K is re-solved for the plan's \((v_{ref}, \omega_{ref})\), never designed below 0.05 m/s, because at a standstill the sideways error is uncontrollable.</li>
-    <li><b>Feedforward.</b> \(\omega_{ref} = v_{ref}\,\kappa\) on the 0.25 m corner arcs. Cruise 0.15 m/s, acceleration 0.15 m/s², and 0.05 m/s for the last 0.30 m.</li>
-    <li><b>Wheel limits.</b> If either wheel would pass 95% of 7.88 rad/s, both are scaled by the same factor, so the robot keeps its curve and slows down.</li>
-    <li><b>Docking.</b> A 0.90 m straight along the marker's normal, stopping 5 cm from the marker. "Docked" means \(|e_x| &lt; 1\) cm and \(|e_\theta| &lt; 2°\) for 0.5 s, judged from the estimate.</li>
+    <li><b>Gains.</b> On a straight at 0.15&nbsp;m/s: \(\delta v = 0.99\,e_x\) and \(\delta\omega = 11.5\,e_y + 3.8\,e_\theta\). Time constants are 1.0&nbsp;s along the path, 0.30&nbsp;s in heading and 1.9&nbsp;s sideways.</li>
+    <li><b>Gain schedule.</b> K is re-solved for the plan's \((v_{ref}, \omega_{ref})\), never for less than 0.05&nbsp;m/s, because the sideways error is uncontrollable at a standstill. In the 0.25&nbsp;m corners its slowest time constant is 1.19&nbsp;s, against 1.46&nbsp;s for one fixed gain.</li>
+    <li><b>Reference and feedforward.</b> Cruise 0.15&nbsp;m/s, acceleration 0.15&nbsp;m/s², at most 70&nbsp;% of wheel speed in the plan so 30&nbsp;% is left for feedback, and 0.05&nbsp;m/s for the last 0.30&nbsp;m. On curved routes the turn rate is fed forward as \(\omega_{ref} = v_{ref}\,\kappa\).</li>
+    <li><b>Wheel limits.</b> If either wheel would pass 95&nbsp;% of 7.88&nbsp;rad/s, both are scaled by the same factor, so the robot keeps its curve and slows down.</li>
+    <li><b>Docking.</b> A 0.90&nbsp;m straight along the marker's normal, stopping 5&nbsp;cm from the marker face. "Docked" means \(|e_x| &lt; 1\) cm and \(|e_\theta| &lt; 2°\) for 0.5&nbsp;s, judged from the estimate. A robot starting more than 15° off its first leg turns on the spot first.</li>
+    <li><b>No integral action.</b> A constant turn-rate disturbance d leaves a sideways offset of \(d / k_y\). For a left motor at 90&nbsp;% and 80&nbsp;% this predicts 5.0&nbsp;mm and 11.3&nbsp;mm; MuJoCo gave 5.0&nbsp;mm and 11.2&nbsp;mm. Integral action would remove it but winds up during the EKF's large corrections.</li>
   </ul>
   <h3>Results on the Part D test bench</h3>
-  <p class="note">These trials use <code>run_tracking.py</code> with smooth hand-planned routes. The final pipeline drives A* legs instead (Part E), so the two sets of numbers are reported separately.</p>
+  <p class="note">These trials use <code>run_tracking.py</code> on three smooth hand-planned routes (slalom, north and south), each with a random 2&nbsp;cm / 1.5° placement error. The batch uses a fast camera stand-in with σ = 2&nbsp;mm + 1&nbsp;% of range and 0.5°, larger than Part B measured, checked below against the rendered camera. The final pipeline drives A* legs instead (Part E).</p>
   <div class="scroll"><table>
-    <tr><th>90 random trials, MuJoCo</th><th class="num">Mean</th><th class="num">SD</th><th class="num">Worst</th></tr>
+    <tr><th>90 random trials in MuJoCo</th><th class="num">Mean</th><th class="num">SD</th><th class="num">Worst</th></tr>
     <tr><td>Docked within tolerance, no collisions</td><td class="num" colspan="3">90 / 90</td></tr>
     <tr><td>RMS cross-track error, true (cm)</td><td class="num">3.66</td><td class="num">1.97</td><td class="num">9.60</td></tr>
     <tr><td>RMS cross-track error the controller sees (cm)</td><td class="num">0.92</td><td class="num">0.61</td><td class="num">2.65</td></tr>
     <tr><td>EKF position error, RMS (cm)</td><td class="num">4.14</td><td class="num">1.90</td><td class="num">10.51</td></tr>
+    <tr><td>Dock error along (cm)</td><td class="num">0.06</td><td class="num">0.07</td><td class="num">0.25</td></tr>
     <tr><td>Dock error sideways (cm)</td><td class="num">0.01</td><td class="num">0.15</td><td class="num">0.40</td></tr>
     <tr><td>Dock heading error (°)</td><td class="num">−0.07</td><td class="num">0.64</td><td class="num">1.56</td></tr>
+    <tr><td>Time to dock (s)</td><td class="num">46.1</td><td class="num">3.6</td><td class="num">51.0</td></tr>
   </table></div>
-  <p>The controller holds what it sees to 0.9 cm; the true error is four times larger and almost all of it is estimation error. In 30 trials with the rendered camera, all 30 docked, with 2.53 cm true error against 3.08 cm for the fake camera on the same seeds.</p>
+  <p>The controller holds what it sees to 0.9&nbsp;cm. The true error is four times larger and almost all of it is estimation error: the camera only sees the dock from about 2.2&nbsp;m, so the first 3–4&nbsp;m of every route run on odometry alone. Docking is accurate because the final 0.9&nbsp;m has camera fixes all the way in. With the rendered camera the same 30 starts all docked, with 2.53&nbsp;cm true error against 3.08&nbsp;cm for the stand-in: the real detector finds the marker sooner, so the stand-in is slightly pessimistic.</p>
+  <div class="scroll"><table>
+    <tr><th>Design comparison (30 runs, same seeds)</th><th class="num">Docked</th><th class="num">RMS \(e_y\) true (cm)</th><th class="num">RMS \(e_y\) seen (cm)</th><th class="num">RMS feedback ω (rad/s)</th></tr>
+    <tr class="pick"><td>Final: scheduled LQR + feedforward</td><td class="num">30/30</td><td class="num">2.92</td><td class="num">0.77</td><td class="num">0.031</td></tr>
+    <tr><td>One fixed gain (straight line, 0.15&nbsp;m/s)</td><td class="num">30/30</td><td class="num">2.93</td><td class="num">0.78</td><td class="num">0.037</td></tr>
+    <tr><td>No turn-rate feedforward</td><td class="num">30/30</td><td class="num">3.02</td><td class="num">1.09</td><td class="num">0.085</td></tr>
+  </table></div>
+  <p>Feedforward matters most: without it the error the controller sees is 40&nbsp;% bigger and the feedback effort 2.7 times higher. Scheduling saves about 16&nbsp;% of the feedback effort.</p>
   <figure>
-    <img src="assets/d_effort_vs_error.png" alt="Left: RMS cross-track error against RMS wheel acceleration as R is scaled; right: share of steps at the wheel limit against R scale">
-    <figcaption>Control effort against tracking error. A 100 times more aggressive R doubles wheel acceleration and hits the wheel limit 18 times as often, without reducing the true error.</figcaption>
+    <a href="assets/d_effort_vs_error.png" title="Open full size"><img src="assets/d_effort_vs_error.png" alt="Left: RMS cross-track error against RMS wheel acceleration as the LQR input weight R is scaled; right: share of steps at the wheel limit against the R scale"></a>
+    <figcaption>Control effort against tracking error, with Q fixed and the LQR input weight R scaled from 0.01 to 30.</figcaption>
   </figure>
   <div class="scroll"><table>
+    <tr><th>R scale</th><th class="num">0.01</th><th class="num">0.1</th><th class="num">1 (final)</th><th class="num">10</th><th class="num">30</th></tr>
+    <tr><td>RMS \(e_y\) true (cm)</td><td class="num">2.57</td><td class="num">2.53</td><td class="num">2.56</td><td class="num">2.62</td><td class="num">2.67</td></tr>
+    <tr><td>RMS wheel acceleration (rad/s²)</td><td class="num">13.9</td><td class="num">8.7</td><td class="num">6.7</td><td class="num">6.0</td><td class="num">5.9</td></tr>
+    <tr><td>Steps with a wheel at its limit (%)</td><td class="num">1.13</td><td class="num">0.52</td><td class="num">0.06</td><td class="num">0</td><td class="num">0</td></tr>
+  </table></div>
+  <p>A controller 100 times more aggressive than the Bryson design doesn't reduce the true error (2.56 to 2.57&nbsp;cm): it doubles the wheel acceleration and hits the wheel limit 18 times as often. The true error is capped by the estimate, not the gains, so what limits the gains is the wheel speed limit and the EKF's corrections, which a high-gain controller turns straight into wheel jerks.</p>
+  <div class="scroll"><table>
     <tr><th>Left motor</th><th class="num">Docked</th><th class="num">Dock sideways (cm)</th><th class="num">RMS feedback ω (rad/s)</th></tr>
-    <tr><td>100%</td><td class="num">30/30</td><td class="num">0.08 ± 0.13</td><td class="num">0.025</td></tr>
-    <tr><td>90%</td><td class="num">30/30</td><td class="num">−0.20 ± 0.14</td><td class="num">0.061</td></tr>
-    <tr><td>80%</td><td class="num">30/30</td><td class="num">−0.54 ± 0.15</td><td class="num">0.123</td></tr>
+    <tr><td>100&nbsp;%</td><td class="num">30/30</td><td class="num">0.08 ± 0.13</td><td class="num">0.025</td></tr>
+    <tr><td>90&nbsp;%</td><td class="num">30/30</td><td class="num">−0.20 ± 0.14</td><td class="num">0.061</td></tr>
+    <tr><td>80&nbsp;%</td><td class="num">30/30</td><td class="num">−0.54 ± 0.15</td><td class="num">0.123</td></tr>
   </table></div>
   <figure>
-    <img src="assets/d_render_slalom.png" alt="Slalom route with the rendered camera: path with uncertainty ellipses, cross-track error, commands and wheel speeds">
-    <figcaption>One rendered-camera run on the slalom route: path, true and estimated cross-track error, commands against the plan, and wheel speeds against the limit.</figcaption>
+    <a href="assets/d_render_slalom.png" title="Open full size"><img src="assets/d_render_slalom.png" alt="Slalom route with the rendered camera: path with uncertainty ellipses, cross-track error, commands against the plan, and wheel speeds against the limit"></a>
+    <figcaption>One rendered-camera run on the slalom route: path with the EKF's uncertainty ellipses, true and estimated cross-track error, commands against the plan, and wheel speeds against the limit.</figcaption>
   </figure>
 </section>
 
 <section id="integration">
   <h2>Part E: integration and robustness</h2>
-  <p>One loop connects Part B's sensing, Part C's EKF, a LiDAR planner and Part D's LQR. The planner builds a 0.10 m grid of the room from LiDAR hits, inflates them by 0.40 m, runs A*, and replans when a new scan blocks the current leg. Details: <a href="https://github.com/OWNER/REPO/blob/main/part_e_integration/PIPELINE.md">PIPELINE.md</a>.</p>
+  <p>One loop joins the rendered camera and LiDAR, Part B's sensing, Part A's model, Part C's EKF and Part D's LQR. The map is a 0.10&nbsp;m grid of the known 6 × 6&nbsp;m room, built from LiDAR endpoints placed with the estimated pose, and each endpoint blocks cells within 0.40&nbsp;m. A* plans to a pre-dock point 0.9&nbsp;m in front of the dock, and line-of-sight simplification leaves a few waypoints. The LQR follows one straight leg at a time and re-plans when a new scan blocks the leg; a 0.15&nbsp;m start allowance lets the robot leave the margin around itself. The last 0.9&nbsp;m is Part D's straight approach along the marker's normal. Full write-up: <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project/blob/main/part_e_integration/PART_E_INTEGRATION.md">PART_E_INTEGRATION.md</a>.</p>
+  <p>A trial ends when the robot docks, the tracker times out, or 150&nbsp;s pass. <b>Success</b> means docked with the true final pose within 3&nbsp;cm along the dock axis, 2&nbsp;cm sideways and 3°, with no contact with a box.</p>
+  <h3>Nominal trials</h3>
+  <p>Three trials from each start, each with a random 2&nbsp;cm / 1.5° placement error the EKF isn't told about.</p>
   <div class="scroll"><table>
-    <tr><th>Conditions (random placement 2 cm, 1.5°)</th><th class="num">Seeds</th><th class="num">Docked</th><th class="num">Collisions</th><th class="num">EKF RMSE (cm)</th><th class="num">Odometry RMSE (cm)</th><th class="num">True cross-track (cm)</th></tr>
-    <tr><td>West start</td><td class="num">30–32</td><td class="num">3/3</td><td class="num">0</td><td class="num">2.66</td><td class="num">5.24</td><td class="num">1.69</td></tr>
-    <tr><td>North start</td><td class="num">10–12</td><td class="num">3/3</td><td class="num">0</td><td class="num">4.15</td><td class="num">9.95</td><td class="num">4.04</td></tr>
-    <tr><td>South start, left motor at 90%, camera off 25 to 30 s</td><td class="num">20–22</td><td class="num">3/3</td><td class="num">0</td><td class="num">4.13</td><td class="num">13.00</td><td class="num">4.21</td></tr>
+    <tr><th>Start</th><th class="num">Docked</th><th class="num">EKF RMSE (cm)</th><th class="num">Odometry RMSE (cm)</th><th class="num">Mean NEES</th><th class="num">Worst final error: along / sideways / heading</th><th class="num">Time to dock (s)</th><th class="num">Camera fixes per run</th></tr>
+    <tr><td>West</td><td class="num">3/3</td><td class="num">2.46</td><td class="num">4.63</td><td class="num">0.55</td><td class="num">0.24&nbsp;cm / 0.11&nbsp;cm / 0.55°</td><td class="num">74</td><td class="num">333</td></tr>
+    <tr><td>North</td><td class="num">3/3</td><td class="num">2.81</td><td class="num">7.16</td><td class="num">0.56</td><td class="num">0.24&nbsp;cm / 0.08&nbsp;cm / 0.43°</td><td class="num">67</td><td class="num">320</td></tr>
+    <tr><td>South</td><td class="num">3/3</td><td class="num">4.69</td><td class="num">15.06</td><td class="num">0.83</td><td class="num">0.24&nbsp;cm / 0.28&nbsp;cm / 1.22°</td><td class="num">44</td><td class="num">175</td></tr>
   </table></div>
-  <p>The largest final errors across these nine trials were 0.40 cm along, 0.38 cm sideways and 1.39°. The same pipeline also docked in all 18 of Part C's trials. One failure was found and fixed during development: the inflated margin could cover the robot's own cell and freeze the planner, so a 0.15 m start allowance now lets it leave.</p>
-  <p><mark class="todo">[Robustness batch: 10 seeds per condition, with longer camera loss, an 80% motor, stronger LiDAR noise and a larger start error. Say where each one breaks and which component fails.]</mark></p>
+  <p>All nine docked with no collisions. The EKF's position error is 63&nbsp;% below odometry (3.32 against 8.95&nbsp;cm RMS), and its NEES of about 0.6 is conservative, as Part C chose. Most of the error comes before the first camera fix, 17–37&nbsp;s into a run: two south runs were 17–18&nbsp;cm out just before it, and after it every run stays under 2.5&nbsp;cm RMS.</p>
   <figure>
-    <img src="assets/e_pipeline_west_seed0.png" alt="Integrated run from the west start: LiDAR map and paths, then x, y and heading estimates with ±2 standard deviation bands next to the true values">
-    <figcaption>Nominal west-start run from a fresh install: docked, 1.5 cm EKF position error, 435 camera fixes, 10 replans. <mark class="todo">[replace with your committed run if you prefer]</mark></figcaption>
+    <a href="assets/e_main_run_west.png" title="Open full size"><img src="assets/e_main_run_west.png" alt="Integrated run from the west start: the path on the LiDAR map, then x, y and heading estimates with ±2 standard deviation bands next to the true values"></a>
+    <figcaption><code>python main.py</code>: the west start with an exact placement. It docks at 77.5&nbsp;s, 0.24&nbsp;cm short along the dock axis, 0.03&nbsp;cm sideways and 0.27° off, with an EKF error of 0.9&nbsp;cm RMS. Top left, the path on the LiDAR map; the other panels show each state's estimate and ±2σ band next to the truth.</figcaption>
   </figure>
+  <h3>Robustness study</h3>
+  <p>Each condition changes one thing from the nominal west trial and runs the same three seeds, each with the usual placement error, so every level faces the same starts. Each disturbance was pushed until docking failed. Noise levels multiply Part B's models, and the camera is cut from t = 30&nbsp;s because from the west start it first sees the marker 33–37&nbsp;s in.</p>
+  <div class="scroll"><table>
+    <tr><th>Disturbance</th><th>Still docks at</th><th>Fails at</th><th>How it fails</th><th>Where the cause is</th></tr>
+    <tr><td>Camera lost from t = 30&nbsp;s</td><td>30&nbsp;s of loss</td><td>40&nbsp;s or for the rest of the run</td><td>Docks on odometry alone, 5.4–8.0&nbsp;cm sideways</td><td>Estimation: no absolute fix, and docking ignores the covariance</td></tr>
+    <tr><td>Left motor weak</td><td>60&nbsp;%</td><td>50&nbsp;%</td><td>Docks 2.3–2.4&nbsp;cm sideways</td><td>Control: steady offset without integral action</td></tr>
+    <tr><td>LiDAR noise</td><td>×3</td><td>×10 and ×30</td><td>Never leaves the start</td><td>Mapping: noise becomes obstacles that block every path</td></tr>
+    <tr><td>Placement error</td><td>×6 (12&nbsp;cm and 9°)</td><td>not reached</td><td>–</td><td>–</td></tr>
+    <tr><td>Encoder noise</td><td>×30</td><td>not reached</td><td>–</td><td>–</td></tr>
+  </table></div>
+  <figure class="wide">
+    <a href="assets/e_robustness.png" title="Open full size"><img src="assets/e_robustness.png" alt="Robustness study: fraction docked at each level of each disturbance (top) and every run's EKF position error on a log scale (bottom)"></a>
+    <figcaption>Top: the fraction docked at each level (click a figure to open it full size). Bottom: every run's EKF position error (o docked, × failed). 33 of the 48 disturbed runs docked, and all 9 nominal ones.</figcaption>
+  </figure>
+  <details>
+    <summary>Every run, condition by condition (three seeds per level)</summary>
+    <div class="scroll"><table>
+      <tr><th>Condition</th><th>Level</th><th class="num">Docked</th><th class="num">EKF RMSE (cm)</th><th class="num">Odometry RMSE (cm)</th><th class="num">Mean NEES</th><th class="num">Sideways at the dock (cm)</th><th class="num">Camera readings rejected per run</th></tr>
+      <tr><td>nominal</td><td>west</td><td class="num">3/3</td><td class="num">2.46</td><td class="num">4.63</td><td class="num">0.55</td><td class="num">0.09</td><td class="num">1</td></tr>
+      <tr><td>nominal</td><td>north</td><td class="num">3/3</td><td class="num">2.81</td><td class="num">7.16</td><td class="num">0.56</td><td class="num">0.04</td><td class="num">2</td></tr>
+      <tr><td>nominal</td><td>south</td><td class="num">3/3</td><td class="num">4.69</td><td class="num">15.06</td><td class="num">0.83</td><td class="num">0.19</td><td class="num">0</td></tr>
+      <tr><td>camera lost from t = 30&nbsp;s</td><td>10&nbsp;s</td><td class="num">3/3</td><td class="num">2.62</td><td class="num">4.16</td><td class="num">0.47</td><td class="num">0.08</td><td class="num">1</td></tr>
+      <tr><td>camera lost from t = 30&nbsp;s</td><td>20&nbsp;s</td><td class="num">3/3</td><td class="num">3.13</td><td class="num">4.68</td><td class="num">0.20</td><td class="num">0.06</td><td class="num">0</td></tr>
+      <tr><td>camera lost from t = 30&nbsp;s</td><td>30&nbsp;s</td><td class="num">3/3</td><td class="num">3.81</td><td class="num">4.68</td><td class="num">0.21</td><td class="num">0.27</td><td class="num">0</td></tr>
+      <tr class="fail"><td>camera lost from t = 30&nbsp;s</td><td>40&nbsp;s</td><td class="num"><b>0/3</b></td><td class="num">4.66</td><td class="num">4.66</td><td class="num">0.22</td><td class="num">6.87</td><td class="num">0</td></tr>
+      <tr class="fail"><td>camera lost from t = 30&nbsp;s</td><td>rest of run</td><td class="num"><b>0/3</b></td><td class="num">4.66</td><td class="num">4.66</td><td class="num">0.22</td><td class="num">6.87</td><td class="num">0</td></tr>
+      <tr><td>left motor strength</td><td>80&nbsp;%</td><td class="num">3/3</td><td class="num">2.20</td><td class="num">4.30</td><td class="num">0.69</td><td class="num">0.48</td><td class="num">3</td></tr>
+      <tr><td>left motor strength</td><td>70&nbsp;%</td><td class="num">3/3</td><td class="num">2.16</td><td class="num">3.98</td><td class="num">0.73</td><td class="num">0.90</td><td class="num">1</td></tr>
+      <tr><td>left motor strength</td><td>60&nbsp;%</td><td class="num">3/3</td><td class="num">2.02</td><td class="num">3.65</td><td class="num">0.66</td><td class="num">1.40</td><td class="num">2</td></tr>
+      <tr class="fail"><td>left motor strength</td><td>50&nbsp;%</td><td class="num"><b>0/3</b></td><td class="num">2.18</td><td class="num">3.66</td><td class="num">0.66</td><td class="num">2.34</td><td class="num">3</td></tr>
+      <tr><td>LiDAR noise</td><td>×3</td><td class="num">3/3</td><td class="num">2.56</td><td class="num">4.98</td><td class="num">0.35</td><td class="num">0.03</td><td class="num">1</td></tr>
+      <tr class="fail"><td>LiDAR noise</td><td>×10</td><td class="num"><b>0/3</b></td><td class="num">1.60</td><td class="num">1.60</td><td class="num">0.15</td><td class="num">–</td><td class="num">0</td></tr>
+      <tr class="fail"><td>LiDAR noise</td><td>×30</td><td class="num"><b>0/3</b></td><td class="num">1.59</td><td class="num">1.59</td><td class="num">0.14</td><td class="num">–</td><td class="num">0</td></tr>
+      <tr><td>placement error</td><td>×3</td><td class="num">3/3</td><td class="num">6.30</td><td class="num">12.91</td><td class="num">1.77</td><td class="num">0.21</td><td class="num">0</td></tr>
+      <tr><td>placement error</td><td>×6</td><td class="num">3/3</td><td class="num">12.28</td><td class="num">23.66</td><td class="num">6.25</td><td class="num">0.35</td><td class="num">0</td></tr>
+      <tr><td>encoder noise</td><td>×10</td><td class="num">3/3</td><td class="num">2.52</td><td class="num">4.87</td><td class="num">0.63</td><td class="num">0.08</td><td class="num">2</td></tr>
+      <tr><td>encoder noise</td><td>×30</td><td class="num">3/3</td><td class="num">2.86</td><td class="num">5.55</td><td class="num">0.90</td><td class="num">0.11</td><td class="num">2</td></tr>
+    </table></div>
+  </details>
+  <h3>Where it breaks, and why</h3>
+  <p><b>Camera loss.</b> From the west start the marker is in view from 33–37&nbsp;s until about 2&nbsp;s before the robot stops. With 30&nbsp;s of loss the camera comes back at 60&nbsp;s, which gives about 90 fixes, and the robot docks within 0.4&nbsp;cm sideways. With 40&nbsp;s of loss it gets no fix at all, so it docks on odometry alone and stops 5.4–8.0&nbsp;cm to the side. The EKF knew it was lost: its sideways ±2σ band had grown to ±1.2&nbsp;m. The fault is in the docking rule, which trusts the estimate however large its covariance; refusing to dock, or turning to look for the marker, would turn a silent miss into a detected one.</p>
+  <p><b>Weak motor.</b> The EKF sees a weak motor through the encoders, and the robot still docks with the left motor at 60&nbsp;%. The sideways offset at the dock grows with the imbalance (0.5, 0.9 and 1.4&nbsp;cm at 80, 70 and 60&nbsp;%) and reaches 2.3–2.4&nbsp;cm at 50&nbsp;%, past the 2&nbsp;cm tolerance. That is the steady offset a controller without integral action leaves. The EKF's final estimate matched the true offset within 0.15&nbsp;cm, so the estimator was not the problem.</p>
+  <p><b>LiDAR noise.</b> At ten times Part B's noise, beam endpoints land far from any surface. Each is inflated by 0.40&nbsp;m and the map never clears a cell, so within a few scans phantom obstacles close every path. The robot waits out the 150&nbsp;s limit 5&nbsp;m from the dock while the EKF holds 1.6&nbsp;cm RMS, so the cause is the mapping. Marking a cell only after repeated hits, and clearing cells that later beams pass through, would tolerate far more noise.</p>
+  <p><b>Placement error and encoder noise</b> didn't stop it at the levels tested. With six times the placement error the first camera fix pulls the estimate in and the robot docks within 0.4&nbsp;cm sideways, although the EKF is overconfident before that fix (mean NEES 6.3) because it still starts with 2&nbsp;cm and 1.5° of uncertainty.</p>
+  <div class="pair">
+    <figure>
+      <a href="assets/e_failed_camera_loss.png" title="Open full size"><img src="assets/e_failed_camera_loss.png" alt="Failed run with the camera lost for the rest of the run: the sideways uncertainty band grows to plus or minus 1.2 m while the robot docks off to the side"></a>
+      <figcaption>Camera lost for the rest of the run (seed 502): the sideways ±2σ band grows to ±1.2&nbsp;m, and the robot docks off to the side anyway.</figcaption>
+    </figure>
+    <figure>
+      <a href="assets/e_failed_lidar_noise.png" title="Open full size"><img src="assets/e_failed_lidar_noise.png" alt="Failed run with ten times the LiDAR noise: phantom obstacles fill the map and the robot never leaves its start"></a>
+      <figcaption>Ten times the LiDAR noise (seed 500): phantom obstacles fill the map and the robot never leaves the start, while its estimate stays good.</figcaption>
+    </figure>
+  </div>
+  <h3>The same study with Part B's measured R</h3>
+  <p>The whole study was also run with Part B's measured R in the EKF. It docked in 42 of 57 runs, the same as with the design R, and failed in the same conditions for the same reasons. The difference was in the weak-motor runs: in one 80&nbsp;% run and one 70&nbsp;% run, a bad first camera reading got through the gate and shut the camera out for 29&nbsp;s and 8&nbsp;s. At 80&nbsp;% those runs rejected 99 camera readings each on average, against 3 with the design R, and the EKF error was 3.6&nbsp;cm against 2.2&nbsp;cm.</p>
   <h3>Limits</h3>
   <ul>
-    <li>One marker gives range and bearing only, so the rotation about the marker is unobservable; a second landmark or the marker's orientation would fix it.</li>
-    <li>Unknown space counts as free, and the map never clears old hits, so large drift or moving obstacles make it conservative.</li>
-    <li>The final 0.90 m straight assumes the dock corridor is clear.</li>
-    <li>Q and R are simulation design values until the measured noise from Part B replaces R.</li>
+    <li>One marker gives range and bearing only, so a rotation about the marker is unobservable; a second landmark or the marker's orientation would remove it.</li>
+    <li>The docking rule trusts the estimate whatever its covariance, as the camera-loss runs show.</li>
+    <li>There is no integral action, so a motor that keeps less than about half its strength leaves the robot more than 2&nbsp;cm to the side of the dock.</li>
+    <li>Unknown space counts as free, and the map never clears old hits, so large drift, moving obstacles or a much noisier LiDAR make it conservative. The final 0.9&nbsp;m straight assumes the dock corridor is clear.</li>
+    <li>Q and R are design values tuned and checked in simulation, with Part B's measured R as the comparison; neither has been checked on a real robot.</li>
+    <li>Three seeds per level show where each failure starts, not how often it happens near that level.</li>
   </ul>
 </section>
 
 <section id="ground-truth">
   <h2>Ground truth is only used for evaluation</h2>
-  <p>The controller and planner only ever receive the EKF estimate. The simulator's pose is read in three places, all after the commands for that step are computed:</p>
+  <p>The controller and the EKF never receive the simulator's true pose. Where it is read, and how that is checked:</p>
   <ul>
-    <li><code>Simulator.truth()</code> and <code>collided()</code> in <code>part_e_integration/sim.py</code>: logging, success and collision scoring.</li>
-    <li><code>truth()</code> in <code>part_d_control/run_tracking.py</code>: the test bench's referee and its pre-flight check.</li>
-    <li><code>ekf.nees()</code> and the replay scoring in Part C: consistency metrics after the fact.</li>
+    <li><code>part_e_integration/pipeline.py</code>: <code>run_trial()</code> logs <code>simulator.truth()</code> and <code>simulator.collided()</code> after each step's commands are computed, for scoring and plots. <code>Pipeline.step()</code> takes only wheel angles, the time, a LiDAR scan and an image.</li>
+    <li><code>part_d_control/run_tracking.py</code>: the test bench's referee scores runs and stops a run if the robot hits a box.</li>
+    <li>Offline experiments place the robot themselves and compare with that pose: Part B's calibration and noise measurement, and Part A's model check.</li>
+    <li><b>Checks.</b> <code>test_pipeline.py</code> runs the integrated pipeline twice, the second time with <code>truth()</code> returning NaN, and the wheel commands are identical; it also scans the code that runs inside the loop for any use of the simulator. <code>test_controller.py</code> does the same leak check on the controller, and plants a deliberate leak to show the check can fail.</li>
   </ul>
-  <p><code>Pipeline.step()</code> takes wheel angles, time, a LiDAR scan and an image, and has no simulator argument. On the Part D test bench, a MuJoCo test re-runs a trial with <code>truth()</code> returning NaN and checks every wheel command is unchanged. That bench's fake camera also uses the true pose to work out what a camera would see, the way MuJoCo's renderer does; the integrated pipeline uses rendered images.</p>
-  <p>The slipping robot shows it from the other side: with the model as supplied, the controller kept its estimate on the plan while the real robot drifted up to 2.85 m. A controller reading the true pose would have steered back.</p>
+  <p>The slipping robot shows it from the other side. With the robot exactly as the XML loads, before the floor-contact correction, the controller kept its estimate on the plan while the real robot ended up as far as 3.2&nbsp;m from the dock, and in 84 of 90 runs it stopped and called itself docked. A controller reading the true pose would have steered back.</p>
   <figure>
-    <img src="assets/d_slipping_robot_north.png" alt="Robot model before the contact fix: the EKF estimate follows the plan to the dock while the true path ends 2.85 m away; the error the controller sees stays near zero">
-    <figcaption>The robot model as supplied, before the contact fix (worst of 30 north runs). The estimate (red) follows the plan to the dock while the slipping robot (blue) ends 2.85 m away, and the error the controller sees stays near zero.</figcaption>
+    <a href="assets/d_slipping_robot_north.png" title="Open full size"><img src="assets/d_slipping_robot_north.png" alt="Robot model before the contact fix: the EKF estimate follows the plan to the dock while the true path ends 2.85 m away; the error the controller sees stays at zero"></a>
+    <figcaption>The robot as the XML loads (worst of 30 north runs). The estimate (red) follows the plan to the dock, while the slipping robot (blue) ends 2.85&nbsp;m away and the error the controller sees stays at zero.</figcaption>
   </figure>
 </section>
 
 <section id="run">
   <h2>Code and how to run it</h2>
-  <div class="scroll"><table>
-    <tr><th>Folder</th><th>Part</th><th>Owner</th></tr>
-    <tr><td><code>part_a_modelling/</code></td><td>A Modelling</td><td>Gabriel</td></tr>
-    <tr><td><code>part_b_sensing/</code></td><td>B Sensing</td><td>Dinel</td></tr>
-    <tr><td><code>part_c_estimation/</code></td><td>C Estimation</td><td>Abdul</td></tr>
-    <tr><td><code>part_d_control/</code></td><td>D Control</td><td>Andre</td></tr>
-    <tr><td><code>part_e_integration/</code></td><td>E Integration and robustness</td><td><mark class="todo">[name]</mark></td></tr>
-    <tr><td><code>robotis_tb3/</code></td><td>Robot model and scene</td><td>shared</td></tr>
-  </table></div>
-  <p>Tested with Python 3.10. From the repository root:</p>
-<pre><code>python -m venv .venv
-.venv\Scripts\activate
+  <p>Repository: <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project">github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project</a>. You need Python 3.12 or newer (tested on 3.12 and 3.15). The pinned packages have wheels for Windows, Linux and Apple-silicon Macs. On Windows (PowerShell):</p>
+<pre><code>git clone https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project.git
+cd 41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 
-python -m unittest discover -s part_c_estimation -p "test_*.py" -v
-python -m unittest discover -s part_d_control -p "test_*.py" -v
-
-python part_e_integration/run_pipeline.py
-python part_e_integration/run_pipeline.py --viewer
-python part_e_integration/run_pipeline.py --start south --placement-noise --trials 3 --seed 20 --wheel-gain 0.9 1 --camera-dropout 25 30
-python part_c_estimation/evaluate_estimator.py --collect
-python part_d_control/run_tracking.py --camera synthetic --report</code></pre>
-  <p>In order: install, the two test suites, one nominal run (plots go to <code>part_e_integration/results_pipeline/</code>), the same run in the MuJoCo viewer, the disturbed set, Part C's tuning study, and Part D's batches (about 20 minutes). On macOS or Linux, activate with <code>source .venv/bin/activate</code>.</p>
+python main.py              # the whole system: one docking run from the west start (about 3 minutes)
+python main.py --viewer     # the same run, watched in the MuJoCo viewer
+python -m unittest -v       # all 32 checks for Parts C, D and E (under a minute)</code></pre>
+  <p>On macOS or Linux, use <code>python3 -m venv .venv</code> and <code>source .venv/bin/activate</code>. A run prints a line such as <code>west_seed0: docked, success=True, EKF RMSE=0.9&nbsp;cm, camera fixes=372, replans=10</code> and saves a log, a JSON summary and a plot in <code>part_e_integration/results_pipeline/</code>. <code>python main.py --help</code> lists the other starts, repeated trials, a weak motor, camera loss and the noise settings. The <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project#reproducing-the-results">README</a> lists the command behind every result on this page.</p>
+  <div class="scroll"><table>
+    <tr><th>Folder</th><th>Part</th><th>Owner</th></tr>
+    <tr><td><code>main.py</code></td><td>The file to run (code in <code>part_e_integration/pipeline.py</code>)</td><td>—</td></tr>
+    <tr><td><code>part_a_modelling/</code></td><td>A Modelling</td><td>Gabriel Surya</td></tr>
+    <tr><td><code>part_b_sensing/</code></td><td>B Sensing, frame diagram</td><td>Dinel Atapattu</td></tr>
+    <tr><td><code>part_c_estimation/</code></td><td>C Estimation</td><td>Abdurehman Nasir</td></tr>
+    <tr><td><code>part_d_control/</code></td><td>D Control</td><td>Andre Arredondo</td></tr>
+    <tr><td><code>part_e_integration/</code></td><td>E Integration and robustness</td><td>Abdurehman Nasir, then Andre Arredondo</td></tr>
+    <tr><td><code>robotis_tb3/</code></td><td>Robot model and scene</td><td>shared</td></tr>
+  </table></div>
 </section>
 
 <section id="contributions">
   <h2>Individual contributions</h2>
   <div class="scroll"><table>
     <tr><th>Member</th><th>Contribution</th></tr>
-    <tr><td>Gabriel</td><td><mark class="todo">[In your own words: what you built, decided and tested.]</mark></td></tr>
-    <tr><td>Dinel</td><td><mark class="todo">[In your own words.]</mark></td></tr>
-    <tr><td>Abdul</td><td><mark class="todo">[In your own words.]</mark></td></tr>
-    <tr><td>Andre</td><td><mark class="todo">[Draft, edit in your own words:]</mark> Designed and wrote the LQR tracker (error model, Bryson weights, gain schedule, turn-rate feedforward, wheel limits, docking). Built the Part D test bench and ran the repeated-trial, design-comparison, effort and weak-motor studies. Found and fixed the floor-contact slip, and wrote the ground-truth checks and the Part D report.</td></tr>
-    <tr><td><mark class="todo">[name]</mark></td><td><mark class="todo">[Integration: simulator access, Part B adapter, LiDAR planner, pipeline runner and validation.]</mark></td></tr>
+    <tr><td>Gabriel Surya</td><td><b>Part A, modelling:</b> unicycle model, Jacobians, LQR error model, measurement model, controllability and observability analysis. Made the demo video.</td></tr>
+    <tr><td>Dinel Atapattu</td><td><b>Part B, sensing:</b> encoder and LiDAR noise models, camera calibration in simulation, ArUco detection and frame conversion, measured camera noise R.</td></tr>
+    <tr><td>Abdurehman Nasir (Abdul)</td><td><b>Part C, estimation:</b> the EKF, its noise tuning and consistency study. <b>Part E, integration (first version):</b> simulator interface, sensor adapter, LiDAR map and A* planner, the integrated pipeline.</td></tr>
+    <tr><td>Andre Arredondo</td><td><b>Part D, control:</b> LQR trajectory tracker, docking logic and its closed-loop test bench. <b>Part E, integration (final version):</b> robustness study, final integration and repository. Project page.</td></tr>
   </table></div>
 </section>
 
 <section id="ai">
   <h2>Generative AI declaration</h2>
   <div class="scroll"><table>
-    <tr><th>Tool</th><th>Used by</th><th>Purpose</th></tr>
-    <tr><td>Claude (Anthropic)</td><td>Andre</td><td>Help designing, writing and testing the Part D controller, test bench and report; reviewing the repository; drafting this page.</td></tr>
-    <tr><td>OpenAI Codex</td><td><mark class="todo">[who]</mark></td><td>Integration code, Part C implementation, tests, evaluation tooling and documentation, as stated in <code>PIPELINE.md</code> and <code>PART_C_ESTIMATION.md</code>.</td></tr>
-    <tr><td><mark class="todo">[tool]</mark></td><td><mark class="todo">[who]</mark></td><td><mark class="todo">[purpose]</mark></td></tr>
+    <tr><th>Tool</th><th>Purpose</th></tr>
+    <tr><td>Claude (Anthropic)</td><td><b>Part D:</b> designing, coding and testing the LQR tracker, its test bench and its write-up. <b>Part B:</b> help to design, write, debug and test the sensing code and its write-up. <b>Final pass over the whole repository:</b> folder structure and imports, updating the packages, the corner-refinement fix found while checking Part B, the Part A model check, Part C's camera-gate and lock-out analysis behind the final noise choice, the Part E robustness study, re-running every experiment, and editing the write-ups and the README. <b>Across the team:</b> explaining concepts, debugging code, diagnosing simulator errors, and formatting this project page.</td></tr>
+    <tr><td>OpenAI Codex</td><td><b>Part C:</b> implementation, tests, evaluation tooling, running the experiments and documentation. <b>Part E, first version:</b> integrating the parts into the shared pipeline, its tests and documentation.</td></tr>
   </table></div>
-  <p><mark class="todo">[Each member confirms they have reviewed the code in their part and can explain it.]</mark></p>
+  <p>All AI suggestions were reviewed before use. We ran and tested the code ourselves, checked the results against the simulator, and made our own decisions on parameters and design choices. Every member can explain the code and results of their part. All reported numbers come from running the code in the repository; the final re-runs were made with Claude's help on 5–6 November 2026.</p>
 </section>
 
 <section id="credits">
   <h2>Acknowledgements</h2>
   <ul>
-    <li>TurtleBot3 Waffle Pi model by ROBOTIS, from MuJoCo Menagerie, Apache 2.0 licence (<code>robotis_tb3/LICENSE</code>).</li>
-    <li>41014 tutorial code: <mark class="todo">[which weeks and what was adapted, e.g. the Week 2 encoder and odometry code]</mark>.</li>
-    <li>MuJoCo, OpenCV (ArUco), NumPy, SciPy and Matplotlib.</li>
+    <li>Robot model: TurtleBot3 Waffle Pi by ROBOTIS, from MuJoCo Menagerie, Apache License 2.0 (<code>robotis_tb3/LICENSE</code>). The room, boxes, dock, marker, sensors and calibration board were added by the team.</li>
+    <li>The 41014 weekly tutorials were the starting point: encoder, odometry and range/bearing models (Week 2), camera model, calibration and ArUco pose with PnP (Week 3), state-space models (Week 5), discrete LQR (Week 6) and the EKF (Week 7).</li>
+    <li>Libraries: MuJoCo, OpenCV (ArUco, <code>solvePnP</code>, <code>calibrateCamera</code>), NumPy, SciPy (<code>solve_discrete_are</code>) and Matplotlib.</li>
   </ul>
 </section>
 
 </main>
 
 <footer>
-  41014 Sensors and Control in Mechatronics Systems, Group <mark class="todo">[number]</mark>, <mark class="todo">[semester and year]</mark>.
+  41014 Sensors and Control in Mechatronics Systems · Group 100 · Spring Semester 2026 · <a href="https://github.com/An-dre/41014-Sensors-and-Control-in-Mechatronics-Systems-Assessment-4-Integrated-Project">Code and full write-ups on GitHub</a>
 </footer>
 
 </body>
