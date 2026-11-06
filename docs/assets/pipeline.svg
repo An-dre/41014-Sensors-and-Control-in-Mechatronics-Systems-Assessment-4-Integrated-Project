@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 384" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="12" fill="#202124">
+  <title>Pipeline: sensors, Part B sensing, Part C EKF, Part E planner and Part D LQR, Part A wheel conversion, MuJoCo; true pose only to evaluation</title>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5f6368"/></marker>
+  </defs>
+  <rect width="960" height="384" fill="#ffffff"/>
+  <text x="24" y="32" font-size="16" font-weight="600">Every 20 ms: sensor readings in, wheel speeds out. The true pose only goes to evaluation.</text>
+
+  <!-- column headers -->
+  <g font-size="12" font-weight="600" fill="#5f6368">
+    <text x="105" y="64" text-anchor="middle">Sensors</text>
+    <text x="292" y="64" text-anchor="middle">Part B · sensing</text>
+    <text x="479" y="64" text-anchor="middle">Part C · estimation</text>
+    <text x="666" y="64" text-anchor="middle">Parts D and E</text>
+    <text x="853" y="64" text-anchor="middle">Part A · simulator</text>
+  </g>
+
+  <!-- boxes -->
+  <g stroke-width="1.3">
+    <rect x="24" y="76" width="163" height="54" rx="8" fill="#f1f3f4" stroke="#9aa0a6"/>
+    <rect x="24" y="150" width="163" height="54" rx="8" fill="#f1f3f4" stroke="#9aa0a6"/>
+    <rect x="24" y="224" width="163" height="54" rx="8" fill="#f1f3f4" stroke="#9aa0a6"/>
+    <rect x="211" y="76" width="163" height="54" rx="8" fill="#e6f4ea" stroke="#34a853"/>
+    <rect x="211" y="150" width="163" height="54" rx="8" fill="#e6f4ea" stroke="#34a853"/>
+    <rect x="211" y="224" width="163" height="54" rx="8" fill="#e6f4ea" stroke="#34a853"/>
+    <rect x="398" y="76" width="163" height="128" rx="8" fill="#f3e8fd" stroke="#9334e6"/>
+    <rect x="585" y="76" width="163" height="54" rx="8" fill="#fce8e6" stroke="#d93025"/>
+    <rect x="585" y="224" width="163" height="54" rx="8" fill="#fef7e0" stroke="#e37400"/>
+    <rect x="772" y="76" width="163" height="54" rx="8" fill="#e8f0fe" stroke="#1a73e8"/>
+    <rect x="772" y="224" width="163" height="54" rx="8" fill="#f1f3f4" stroke="#9aa0a6"/>
+    <rect x="585" y="316" width="350" height="48" rx="8" fill="#ffffff" stroke="#9aa0a6" stroke-dasharray="5 4"/>
+  </g>
+
+  <!-- box words -->
+  <g text-anchor="middle">
+    <text x="105" y="99" font-size="13" font-weight="600">Wheel encoders</text>
+    <text x="105" y="117">joint angles, 50 Hz</text>
+    <text x="105" y="173" font-size="13" font-weight="600">RGB camera</text>
+    <text x="105" y="191">640 × 480 image, 10 Hz</text>
+    <text x="105" y="247" font-size="13" font-weight="600">2D LiDAR</text>
+    <text x="105" y="265">36 ranges, 10 Hz</text>
+
+    <text x="292" y="99" font-size="13" font-weight="600">Ticks + noise</text>
+    <text x="292" y="117">→ odometry (v, ω)</text>
+    <text x="292" y="173" font-size="13" font-weight="600">ArUco + PnP + frames</text>
+    <text x="292" y="191">→ range ρ, bearing β</text>
+    <text x="292" y="247" font-size="13" font-weight="600">Range noise</text>
+    <text x="292" y="265">no return → 3.5 m</text>
+
+    <text x="479" y="108" font-size="13" font-weight="600">EKF</text>
+    <text x="479" y="132">predict: (v, ω), 50 Hz</text>
+    <text x="479" y="152">update: (ρ, β), 10 Hz</text>
+    <text x="479" y="172">out: estimate x̂ and P</text>
+
+    <text x="666" y="99" font-size="13" font-weight="600">LQR tracker (D)</text>
+    <text x="666" y="117">(x̂, plan) → (v, ω)</text>
+    <text x="666" y="247" font-size="13" font-weight="600">LiDAR map + A* (E)</text>
+    <text x="666" y="265">x̂ + ranges → next leg</text>
+
+    <text x="853" y="99" font-size="13" font-weight="600">Wheel conversion</text>
+    <text x="853" y="117">(v, ω) → left, right rad/s</text>
+    <text x="853" y="247" font-size="13" font-weight="600">MuJoCo physics</text>
+    <text x="853" y="265">2 ms steps</text>
+
+    <text x="760" y="337" font-size="13" font-weight="600" fill="#5f6368">Evaluation only: true pose</text>
+    <text x="760" y="354" fill="#5f6368">success, errors, NEES, plots. Never fed back.</text>
+  </g>
+
+  <!-- connectors -->
+  <g fill="none" stroke="#5f6368" stroke-width="1.4">
+    <path d="M187 103H209" marker-end="url(#ar)"/>
+    <path d="M187 177H209" marker-end="url(#ar)"/>
+    <path d="M187 251H209" marker-end="url(#ar)"/>
+    <path d="M374 103H396" marker-end="url(#ar)"/>
+    <path d="M374 177H396" marker-end="url(#ar)"/>
+    <path d="M374 251H583" marker-end="url(#ar)"/>
+    <path d="M561 103H583" marker-end="url(#ar)"/>
+    <path d="M561 177H604V222" marker-end="url(#ar)"/>
+    <path d="M700 224V132" marker-end="url(#ar)"/>
+    <path d="M748 103H770" marker-end="url(#ar)"/>
+    <path d="M853 130V222" marker-end="url(#ar)"/>
+    <path d="M820 278V298H105V280" marker-end="url(#ar)"/>
+    <path d="M900 278V314" stroke-dasharray="5 4" marker-end="url(#ar)"/>
+  </g>
+  <g fill="#5f6368" font-size="11.5">
+    <text x="476" y="245">LiDAR ranges</text>
+    <text x="612" y="200">x̂</text>
+    <text x="708" y="182">next leg</text>
+    <text x="861" y="182">wheel speeds</text>
+    <text x="440" y="292">robot moves, sensors read the new state</text>
+    <text x="908" y="300">truth</text>
+  </g>
+</svg>

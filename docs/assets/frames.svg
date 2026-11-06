@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 552" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="13" fill="#202124">
+  <title>Coordinate frames: world, robot base, camera, LiDAR and marker</title>
+  <defs>
+    <marker id="ak" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#202124"/></marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1a73e8"/></marker>
+  </defs>
+  <rect width="960" height="552" fill="#ffffff"/>
+  <text x="24" y="34" font-size="17" font-weight="600">Coordinate frames used by the pipeline (not to scale)</text>
+
+  <!-- top view -->
+  <text x="40" y="66" font-weight="600">Top view</text>
+  <rect x="40" y="80" width="540" height="400" rx="4" fill="#f8f9fa" stroke="#9aa0a6"/>
+
+  <!-- world frame at the room centre -->
+  <g stroke="#202124" stroke-width="1.6">
+    <line x1="310" y1="280" x2="385" y2="280" marker-end="url(#ak)"/>
+    <line x1="310" y1="280" x2="310" y2="205" marker-end="url(#ak)"/>
+  </g>
+  <circle cx="310" cy="280" r="3" fill="#202124"/>
+  <text x="391" y="285">x<tspan font-size="10" dy="3">W</tspan></text>
+  <text x="300" y="198">y<tspan font-size="10" dy="3">W</tspan></text>
+  <text x="318" y="300" font-weight="600">{W}</text>
+
+  <!-- dock and marker on the east wall -->
+  <rect x="568" y="246" width="12" height="68" fill="#4a4f57"/>
+  <rect x="562" y="254" width="6" height="52" fill="#ffffff" stroke="#202124"/>
+  <rect x="563.5" y="262" width="3" height="36" fill="#202124"/>
+  <line x1="558" y1="280" x2="524" y2="280" stroke="#202124" stroke-width="1.6" marker-end="url(#ak)"/>
+  <text x="574" y="214" text-anchor="end" font-weight="600">{M} ArUco marker, id 0</text>
+  <text x="574" y="232" text-anchor="end">(2.888, 0, 0.15) m, faces −x<tspan font-size="10" dy="3">W</tspan></text>
+
+  <!-- line of sight from the robot base to the marker -->
+  <line x1="170" y1="380" x2="560" y2="280" stroke="#5f6368" stroke-width="1.4" stroke-dasharray="6 5"/>
+  <text x="330" y="364" fill="#5f6368">ρ, β (measured in {B})</text>
+
+  <!-- heading angle -->
+  <line x1="232" y1="380" x2="310" y2="380" stroke="#9aa0a6" stroke-width="1.2" stroke-dasharray="4 4"/>
+  <path d="M 270 380 A 100 100 0 0 0 251.9 322.6" fill="none" stroke="#202124" stroke-width="1.2"/>
+  <text x="274" y="338">θ</text>
+
+  <!-- robot, rotated 35 degrees about its centre (170, 380) -->
+  <g transform="rotate(-35 170 380)">
+    <rect x="150" y="342" width="40" height="8" rx="2" fill="#5f6368"/>
+    <rect x="150" y="410" width="40" height="8" rx="2" fill="#5f6368"/>
+    <rect x="125" y="350" width="90" height="60" rx="10" fill="#e8eaed" stroke="#5f6368"/>
+    <circle cx="142" cy="380" r="8" fill="#34a853"/>
+    <g stroke="#202124" stroke-width="1.6">
+      <line x1="170" y1="380" x2="204" y2="380" marker-end="url(#ak)"/>
+      <line x1="170" y1="380" x2="170" y2="315" marker-end="url(#ak)"/>
+    </g>
+    <g stroke="#1a73e8" stroke-width="1.8">
+      <line x1="216" y1="380" x2="285" y2="380" marker-end="url(#ab)"/>
+      <line x1="210" y1="386" x2="210" y2="422" marker-end="url(#ab)"/>
+    </g>
+    <rect x="204" y="374" width="12" height="12" fill="#1a73e8"/>
+  </g>
+  <circle cx="170" cy="380" r="3" fill="#202124"/>
+  <text x="178" y="357" font-size="12">x<tspan font-size="9" dy="3">B</tspan></text>
+  <text x="118" y="312">y<tspan font-size="10" dy="3">B</tspan></text>
+  <text x="270" y="300" fill="#1a73e8">z<tspan font-size="10" dy="3">C</tspan></text>
+  <text x="236" y="407" fill="#1a73e8">x<tspan font-size="10" dy="3">C</tspan></text>
+  <text x="96" y="446" font-weight="600">{B}</text>
+  <text x="124" y="446">base: origin between the wheels</text>
+  <text x="96" y="466">pose (x, y, θ) in {W} = the EKF estimate</text>
+
+  <!-- key -->
+  <rect x="44" y="500" width="12" height="12" fill="#1a73e8"/>
+  <text x="62" y="511">{C} camera (OpenCV axes: z forward, x right, y down)</text>
+  <circle cx="420" cy="506" r="6" fill="#34a853"/>
+  <text x="432" y="511">{L} LiDAR, 36 beams</text>
+
+  <!-- side view -->
+  <text x="620" y="66" font-weight="600">Side view</text>
+  <line x1="620" y1="230" x2="940" y2="230" stroke="#9aa0a6" stroke-width="1.4"/>
+  <rect x="924" y="110" width="12" height="120" fill="#4a4f57"/>
+  <rect x="918" y="130" width="6" height="80" fill="#ffffff" stroke="#202124"/>
+  <rect x="919.5" y="138" width="3" height="64" fill="#202124"/>
+  <text x="914" y="100" text-anchor="end">marker centre z = 0.15 m</text>
+  <rect x="650" y="196" width="120" height="18" rx="4" fill="#e8eaed" stroke="#5f6368"/>
+  <circle cx="700" cy="217" r="13" fill="#5f6368"/>
+  <circle cx="660" cy="226" r="4" fill="#5f6368"/>
+  <line x1="680" y1="196" x2="680" y2="166" stroke="#5f6368" stroke-width="2"/>
+  <rect x="671" y="156" width="19" height="10" rx="2" fill="#34a853"/>
+  <line x1="758" y1="196" x2="758" y2="176" stroke="#5f6368" stroke-width="2"/>
+  <rect x="758" y="164" width="12" height="12" fill="#1a73e8"/>
+  <g stroke="#1a73e8" stroke-width="1.8">
+    <line x1="772" y1="170" x2="836" y2="170" marker-end="url(#ab)"/>
+    <line x1="764" y1="178" x2="764" y2="193" marker-end="url(#ab)"/>
+  </g>
+  <text x="842" y="175" fill="#1a73e8">z<tspan font-size="10" dy="3">C</tspan></text>
+  <text x="772" y="193" fill="#1a73e8">y<tspan font-size="10" dy="3">C</tspan></text>
+  <text x="680" y="140" text-anchor="middle">LiDAR z = 0.17 m</text>
+  <text x="792" y="154" text-anchor="middle">camera z = 0.15 m</text>
+  <circle cx="700" cy="230" r="3" fill="#202124"/>
+  <text x="700" y="250" text-anchor="middle" font-size="12">{B} origin (floor level)</text>
+
+  <!-- transform chain -->
+  <text x="620" y="290" font-weight="600">Transforms</text>
+  <text x="620" y="314">{W} → {B}: (x, y, θ), the EKF estimate</text>
+  <text x="620" y="336">{B} → {L}: t = (−0.049, 0, 0.17) m, no rotation</text>
+  <text x="620" y="358">{B} → {C}: t = (0.07, 0, 0.15) m, rotation</text>
+  <text x="636" y="380">z<tspan font-size="10" dy="3">C</tspan><tspan dy="-3"> = x</tspan><tspan font-size="10" dy="3">B</tspan><tspan dy="-3">,  x</tspan><tspan font-size="10" dy="3">C</tspan><tspan dy="-3"> = −y</tspan><tspan font-size="10" dy="3">B</tspan><tspan dy="-3">,  y</tspan><tspan font-size="10" dy="3">C</tspan><tspan dy="-3"> = −z</tspan><tspan font-size="10" dy="3">B</tspan></text>
+  <text x="620" y="402">{W} → {M}: (2.888, 0, 0.15) m, a known map value</text>
+  <text x="620" y="432">Marker in {B}: p = R<tspan font-size="10" dy="3">BC</tspan><tspan dy="-3"> t</tspan><tspan font-size="10" dy="3">CM</tspan><tspan dy="-3"> + t</tspan><tspan font-size="10" dy="3">BC</tspan></text>
+  <text x="620" y="454">ρ = √(p<tspan font-size="10" dy="3">x</tspan><tspan dy="-3">² + p</tspan><tspan font-size="10" dy="3">y</tspan><tspan dy="-3">²),  β = atan2(p</tspan><tspan font-size="10" dy="3">y</tspan><tspan dy="-3">, p</tspan><tspan font-size="10" dy="3">x</tspan><tspan dy="-3">)</tspan></text>
+  <text x="620" y="476">Only (ρ, β) enters the EKF update.</text>
+  <text x="620" y="511" font-size="12" fill="#5f6368">Mounts from robotis_tb3/turtlebot3_waffle_pi.xml,</text>
+  <text x="620" y="527" font-size="12" fill="#5f6368">marker from robotis_tb3/sceneforturtle.xml.</text>
+</svg>
