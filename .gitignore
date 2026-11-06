@@ -219,4 +219,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Project: raw sensor logs that the experiments regenerate (large)
 part_c_estimation/results_part_c/**/logs/
+part_e_integration/results_robustness*/logs/

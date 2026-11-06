@@ -12,16 +12,16 @@
 # is handed either. --leak-check proves it: it re-runs with truth() itself swapped for one
 # that only returns NaN, and checks every wheel command comes out bit-for-bit the same.
 #
-# Run from the outer project folder:
-#   python part_d_control\run_tracking.py                     one run of each route in MuJoCo
-#   python part_d_control\run_tracking.py --trials 10         10 random trials per route
-#   python part_d_control\run_tracking.py --compare           final design vs the alternatives
-#   python part_d_control\run_tracking.py --sweep             effort vs tracking error (R sweep)
-#   python part_d_control\run_tracking.py --leak-check        proves the truth never steers it
-#   python part_d_control\run_tracking.py --check-sim         check wheels and marker reading first
-#   python part_d_control\run_tracking.py --viewer            watch one run in the MuJoCo viewer
-#   python part_d_control\run_tracking.py --wheel-gain 0.9 1  left motor 10 % weak (disturbance)
-#   python part_d_control\run_tracking.py --report            all of the above that the write-up uses
+# Run from the repository root:
+#   python -m part_d_control.run_tracking                     one run of each route in MuJoCo
+#   python -m part_d_control.run_tracking --trials 10         10 random trials per route
+#   python -m part_d_control.run_tracking --compare           final design vs the alternatives
+#   python -m part_d_control.run_tracking --sweep             effort vs tracking error (R sweep)
+#   python -m part_d_control.run_tracking --leak-check        proves the truth never steers it
+#   python -m part_d_control.run_tracking --check-sim         check wheels and marker reading first
+#   python -m part_d_control.run_tracking --viewer            watch one run in the MuJoCo viewer
+#   python -m part_d_control.run_tracking --wheel-gain 0.9 1  left motor 10 % weak (disturbance)
+#   python -m part_d_control.run_tracking --report            all of the above that the write-up uses
 # Add --camera synthetic to fake the marker reading from the pose instead of rendering the
 # camera (about 40 times faster), --as-is to load the robot exactly as the xml says (it
 # slips, see fix_floor_contacts), or --plant kinematic to use the fast stand-in model (no
@@ -36,13 +36,13 @@ from pathlib import Path
 
 import numpy as np
 
-# so the imports below can find the files in the part_* folders
-sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
+if __package__ in (None, ""):  # run as a file, not with -m: let Python find the part_* packages
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import controller as ctl
-import ekf
-import model
-from model import r, L
+from part_a_modelling import model
+from part_a_modelling.model import r, L
+from part_c_estimation import ekf
+from part_d_control import controller as ctl
 
 HERE = Path(__file__).resolve().parent
 SCENE = HERE.parent / "robotis_tb3" / "sceneforturtle.xml"
@@ -135,9 +135,10 @@ def clearance(pose):
 
 
 # --- sensor stand-ins --------------------------------------------------------------
-# These do what sensing.py does (B1 encoders, B5/B6 marker). sensing.py can't be imported
-# yet because the sim module it uses isn't in the repo, and model.wheels_to_body (A1) is
-# still a TODO. At integration these get swapped for the sensing.py functions.
+# These do what sensing.py does (B1 encoders, B5/B6 marker). I wrote them before Part B
+# and sim.py existed, and the test bench keeps them so its batches stay self-contained and
+# comparable with the fast synthetic camera. The integrated pipeline (part_e_integration)
+# uses sensing.py itself.
 TICK = 2 * np.pi / 4096
 CAM_POS = 0.07                       # camera "rgb" sits 7 cm ahead of the base origin
 CAM_W, CAM_H, CAM_FOVY = 640, 480, 60.0
@@ -172,10 +173,33 @@ def marker_visible(pose):
     return facing > np.cos(np.radians(60)) and fits_side and fits_up and big_enough
 
 
+OCCLUDERS = [(centre, half) for name, (centre, half) in BOXES.items() if name.startswith("box")]
+
+
+def marker_blocked(pose):
+    # Would a box hide any of the marker from the camera here? Scoring only: the fake camera
+    # ignores boxes (the rendered one can't see through them), so this counts the fixes it
+    # gave that a real camera couldn't have. Lines to both edges and the centre of the marker.
+    c, s = np.cos(pose[2]), np.sin(pose[2])
+    cam = pose[:2] + CAM_POS * np.array([c, s])
+    across = np.array([-NORMAL[1], NORMAL[0]]) * MARKER_SIDE / 2
+    for end in (MARKER - across, MARKER, MARKER + across):
+        step = end - cam
+        for centre, half in OCCLUDERS:
+            with np.errstate(divide="ignore", invalid="ignore"):     # slab test, segment vs box
+                t1, t2 = (centre - half - cam) / step, (centre + half - cam) / step
+            enter, leave = np.nanmax(np.minimum(t1, t2)), np.nanmin(np.maximum(t1, t2))
+            if enter <= leave and leave >= 0.0 and enter <= 1.0:
+                return True
+    return False
+
+
 def synthetic_marker(pose_true, rng):
     # The simulator standing in for the camera: if the marker is in view, report range
-    # and bearing from the base origin with noise like sensing.py measured (about 1 cm
-    # at 1 m, 3 cm at 3 m). Only used with --camera synthetic or the kinematic stand-in.
+    # and bearing from the base origin with noise sigma = 2 mm + 1 % of the range and
+    # 0.5 deg of bearing. I picked that before Part B measured the camera, and it's bigger
+    # than what Part B found, so this camera is the pessimistic one. Only used with
+    # --camera synthetic or the kinematic stand-in.
     if not marker_visible(pose_true):
         return None
     z = ekf.h(pose_true, MARKER)
@@ -189,7 +213,8 @@ def rendered_marker(image):
     # Real camera path for MuJoCo: find marker 0 in the rendered image, solvePnP for where
     # it is, move that into the base frame, then range and bearing. Same steps as
     # sensing.py B5/B6, but with this scene's camera (7 cm ahead) and marker size.
-    # Two things I found testing this on synthetic images (worth copying into sensing.py):
+    # Two things I found testing this on synthetic images (sensing.py now refines its corners
+    # and rejects NaN poses too):
     #   * without subpixel corner refinement the corners sit ~0.3 px inside the edge, so the
     #     marker looks small and range reads about 2 % long at 1 m. SUBPIX brings it to ~0.3 %.
     #   * SOLVEPNP_IPPE_SQUARE can say ok = True and still hand back NaN. I check for that and
@@ -229,8 +254,8 @@ def rendered_marker(image):
 
 
 def fix_floor_contacts(model, mujoco):
-    # Keep the old test bench API, using the same correction as the pipeline.
-    from sim import fix_floor_contacts as correct_contacts
+    # The correction now lives in sim.py, so the pipeline and this test bench share it.
+    from part_e_integration.sim import fix_floor_contacts as correct_contacts
     correct_contacts(model, mujoco)
 
 
@@ -459,6 +484,7 @@ def score(res):
         rms_dw_fb=_rms(dw_fb), rms_wheel_acc=_rms(acc.ravel()),
         sat_frac=float(np.mean(res["scale"] < 1.0)), min_gap=float(np.nanmin(res["gap"])),
         fixes=int(np.sum(res["fix"])), rejected=int(res["rejected"]),
+        blocked_fixes=int(sum(marker_blocked(p) for p in res["true"][res["fix"]])),
     )
 
 
@@ -679,8 +705,8 @@ def sweep(args, plant, routes, tag):
 def report(args):
     # The batch results PART_D_CONTROL.md quotes, with the same seeds, so anyone can re-make
     # them. The rendered-camera trials are a separate command (listed there) because each
-    # run takes about 100 s. With scipy this takes about 8 min on the kinematic stand-in,
-    # and about 20 min in MuJoCo with --camera synthetic.
+    # run takes about 2 minutes. This takes about 3 min on the kinematic stand-in, and about
+    # 17 min in MuJoCo with --camera synthetic.
     t0 = time.time()
     plant = make_plant(args)
 

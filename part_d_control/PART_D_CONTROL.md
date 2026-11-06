@@ -3,25 +3,28 @@
 An LQR trajectory tracker for the TurtleBot3 Waffle Pi. It drives a planned route around the
 room's boxes and docks in front of the ArUco-marked station, in the group's MuJoCo scene. It only
 ever uses the EKF estimate from `ekf.py` (Part C). The simulator's true pose is used to score
-runs and nothing else, and section 2.9 shows how that's checked.
+runs and nothing else, and section 2.9 shows how that's checked. In the integrated system
+(`main.py`) the same tracker follows the legs from Part E's LiDAR planner (section 5).
 
 | file in `part_d_control/` | what it is |
 |---|---|
 | `controller.py` | the controller: error model, LQR, gain schedule, reference trajectory, docking, wheel limits |
-| `test_controller.py` | 12 core checks: maths, logic, limits, the MuJoCo scene, and the ground-truth checks |
+| `test_controller.py` | 19 checks: maths, logic, limits, the MuJoCo scene, and the ground-truth checks |
 | `run_tracking.py` | closed-loop test bench in MuJoCo (or a fast stand-in): repeated trials, comparisons, plots |
 | `results_part_d/` | everything `run_tracking.py` writes: plots, `.md` tables, `.csv` per trial |
 
-**Run it** from the outer project folder (needs numpy, scipy, matplotlib, mujoco, opencv-python):
+**Run it** from the repository root, after installing `requirements.txt`:
 
 ```
-python -m unittest discover -s part_d_control -p test_controller.py -v
-python part_d_control\run_tracking.py --check-sim                    pre-flight: wheel slip and marker reading
-python part_d_control\run_tracking.py                                one run of each route, rendered camera, with plots
-python part_d_control\run_tracking.py --viewer                       watch a run in the MuJoCo viewer
-python part_d_control\run_tracking.py --leak-check                   ground truth never reaches the controller (section 2.9)
-python part_d_control\run_tracking.py --camera synthetic --report    every batch result in section 2 (about 20 min)
-python part_d_control\run_tracking.py --trials 10 --seed 4000        the rendered-camera trials in section 2.4 (about 1 h)
+python -m unittest part_d_control.test_controller -v                  the 19 checks
+python -m part_d_control.controller                                   gains and stability, no simulator
+python -m part_d_control.run_tracking --check-sim                     pre-flight: wheel slip and marker reading
+python -m part_d_control.run_tracking                                 one run of each route, rendered camera, with plots
+python -m part_d_control.run_tracking --viewer                        watch a run in the MuJoCo viewer
+python -m part_d_control.run_tracking --leak-check                    ground truth never reaches the controller (section 2.9)
+python -m part_d_control.run_tracking --camera synthetic --report     every batch result in section 2 (about 17 min)
+python -m part_d_control.run_tracking --trials 10 --seed 4000         the rendered-camera trials in section 2.4 (about 65 min)
+python -m part_d_control.run_tracking --plant kinematic --report      the kinematic stand-in's batches (section 2.1, about 3 min)
 ```
 
 ## 1. Design
@@ -45,7 +48,7 @@ e[k+1] = A e[k] + B du[k]      A = [[ 1,      ω_r dt, 0      ],      B = [[-dt,
 ```
 
 Assumptions: small errors, no wheel slip, reference speeds constant over one step. Exact ZOH
-discretisation changes K by 0.5 % at this sample rate, so Euler is fine and matches the EKF.
+discretisation changes K by at most 0.6 % at this sample rate, so Euler is fine and matches the EKF.
 
 ### 1.2 Controllability, and why the robot docks while still moving
 
@@ -70,15 +73,15 @@ sideways error (A5). Even when moving, the sideways direction gets weaker as the
 
 On a straight at 0.15 m/s this gives **dv = 0.99 e_x, dω = 11.5 e_y + 3.8 e_θ**. Closed-loop time
 constants: 1.0 s along the path, 0.30 s in heading, 1.9 s sideways (0.28 m of travel). In a
-0.26 m-radius corner at 0.12 m/s the gain couples the axes (dv also reacts to e_y, dω to e_x)
+0.25 m-radius corner at 0.115 m/s the gain couples the axes (dv also reacts to e_y, dω to e_x)
 and the slowest time constant is 1.2 s. Section 2.7 checks this choice against a sweep of R.
 
 ### 1.4 Gain schedule
 
 A depends on v_ref and ω_ref, so K is re-solved (discrete Riccati, as in Week 6) for whatever
 the plan is doing, and cached. Every (v_ref, ω_ref) the plan can ask for gives a stable loop
-(unit-tested). A single gain designed for straight driving is also stable everywhere, but it
-settles errors in turns in 1.4–1.9 s instead of 1.0–1.2 s.
+(unit-tested). A single gain designed for straight driving is also stable everywhere, but in the
+routes' corners (0.25 m arcs at 0.115 m/s) its slowest time constant is 1.46 s instead of 1.19 s.
 
 ### 1.5 Reference trajectory
 
@@ -116,11 +119,13 @@ If the robot starts more than 15° off the first leg's heading, it turns on the 
 
 The EKF is fed the encoders, i.e. the motion that actually happened, so a weak motor shows up
 honestly in the estimate. Without integral action, a constant turn-rate disturbance d leaves a
-steady sideways offset of d/k_y. In MuJoCo, with the left motor at 90 % the prediction is 4.5 mm
-and I measured 3.8 mm on a straight; at 80 %, 9.0 mm predicted and 8.3 mm measured. All 60
-weak-motor trials still docked inside tolerance (section 2.8). Integral action would remove
-those few mm, but it adds a state that winds up during the EKF's big corrections (up to about
-17 cm, section 2.5), so I left it out.
+steady sideways offset of d/k_y (k_y = 11.5 rad/s per m at cruise). If the left motor only gives
+a fraction g of its command, keeping up with the plan at speed v takes d = v(1 − g)/(g L), so at
+0.15 m/s the offset should be 5.0 mm for a 90 % motor and 11.3 mm for 80 %. In MuJoCo, on the
+north route's 3.8 m straight, the controller held 5.0 mm and 11.2 mm
+(`--camera synthetic --route north --wheel-gain 0.9 1`, then `0.8 1`). All 60 weak-motor trials
+still docked inside tolerance (section 2.8). Integral action would remove those few mm, but it
+adds a state that winds up during the EKF's big corrections (section 2.5), so I left it out.
 
 ## 2. Results
 
@@ -131,15 +136,18 @@ those few mm, but it adds a state that winds up during the EKF's big corrections
   The xml files aren't changed.
 * **Pipeline:** MuJoCo's wheel angles, rounded to encoder ticks (4096 per turn, ±1 tick noise)
   → odometry → `ekf.predict` at 50 Hz. Marker range and bearing → `ekf.update` at 10 Hz whenever
-  the marker is in view. `ekf.py` is used unchanged.
+  the marker is in view. `ekf.py` is used unchanged, with Part C's design Q and R as in the
+  pipeline.
 * **Camera, two versions.** *Rendered:* MuJoCo draws the robot's camera image, OpenCV finds the
   ArUco marker, `solvePnP` says where it is, and that becomes range and bearing. That's the real
-  sensing path, but software rendering takes about 100 s a run here. Before trusting it I put the
+  sensing path, but software rendering takes about 2 minutes a run on our test machine. Before trusting it I put the
   robot at 8 known spots (`--check-sim`). It saw the marker at the 7 where it should, with range
   within about 1 % and bearing within 0.1°. *Fake* (`--camera synthetic`): when the marker
-  would be in view, it reports the true range and bearing plus noise of the size `sensing.py`
-  measured (about 1 cm at 1 m, 3 cm at 3 m). It's 40 times faster, so the batch results use it,
-  and section 2.4 checks it against the rendered camera.
+  would be in view, it reports the true range and bearing plus Gaussian noise, σ = 2 mm + 1 % of
+  the range and 0.5° of bearing. I set that before Part B measured the camera, and it's larger
+  than what Part B found (at most 7 mm of spread up to 2 m, and hundredths of a degree;
+  `PART_B_SENSING.md`, B7), so the fake camera is the pessimistic one. It's about 60 times faster, so the batch
+  results use it, and section 2.4 checks it against the rendered camera.
 * **Routes:** three test routes from different corners (slalom, north, south), each ending in the
   docking leg. They stand in for the planner's waypoints and keep at least 0.40 m between their
   centre line and every box (unit-tested).
@@ -264,8 +272,8 @@ controller turns straight into wheel jerks.
 | 90 % | 30/30 | −0.20 ± 0.14 | 0.23 ± 0.08 | 0.061 |
 | 80 % | 30/30 | −0.54 ± 0.15 | 0.42 ± 0.07 | 0.123 |
 
-The feedback has to supply the turn rate the weak motor loses (0.05 rad/s at cruise speed for a
-10 % loss), so its RMS goes up with the mismatch. The docking offset grows as d/k_y predicts and
+The feedback has to supply the turn rate the weak motor loses (about 0.06 rad/s at cruise speed
+for a 10 % loss), so its RMS goes up with the mismatch. The docking offset grows as d/k_y predicts and
 stays far inside the 2 cm tolerance.
 
 ### 2.9 Ground truth never reaches the controller
@@ -305,8 +313,8 @@ those into x̂, and `LQRTracker.step` takes only x̂ and the time.
    steps on the three routes, all identical. The core test repeats it with the fake camera in MuJoCo.
 2. **The slipping robot shows it from the other side** (section 3.1). With the robot exactly as
    the xml says, the controller kept its estimate on the plan (1.3 cm RMS on average) while the
-   real robot drifted as far as 2.85 m, and in 84 of 90 runs it stopped and called itself
-   docked. A controller that could see the true pose would have steered back.
+   real robot ended up as far as 3.2 m from the dock, and in 84 of 90 runs it stopped and called
+   itself docked. A controller that could see the true pose would have steered back.
 
 The rest of the repo is fine too: `simulation_turtlebot.py` prints the true pose for checking
 only, `sensing.py`'s calibration moves the robot to set spots to take photos, and `ekf.py`'s
@@ -336,20 +344,23 @@ In the worst one above, the robot under-turns at the first corner and heads off 
 never sees the marker, so nothing corrects the estimate, and it ends up 2.85 m from the dock
 while the controller sees no error at all.
 
-The fix (`fix_floor_contacts` in `run_tracking.py`) gives the casters contact priority, so their
-own frictionless contact is used, and lifts the chassis collision shape 2.1 mm so it clears the
-floor by 2 mm. Only the wheels and casters touch the floor, which is how the real robot works. Slip drops under 1 %
-(0.525 m against 0.522 m, 117.2° against 116.7°), and a unit test keeps it there.
+The fix (`fix_floor_contacts()` in `part_e_integration/sim.py`) gives the casters contact
+priority, so their own frictionless contact is used, and lifts the chassis collision shape
+2.1 mm so it clears the floor by 2 mm. Only the wheels and casters touch the floor, which is how
+the real robot works. Slip drops under 1 % (0.525 m against 0.522 m, 117.2° against 116.7°), and
+a unit test keeps it there.
 
-**For the group:** everyone loading the xml as it is gets this slip, including anyone testing the
-EKF in the scene. Two edits to `turtlebot3_waffle_pi.xml` would fix it for everyone (then
-`fix_floor_contacts` does nothing):
+**Shared by every part.** `sim.load()` applies the fix whenever the scene is loaded, so the
+integrated pipeline, Part A's model check and this test bench all drive the same robot. Part A's
+`validatemodel.py` shows the same thing from the model side: with the fix the unicycle model
+matches MuJoCo to within 1 cm and 1°; without it the error reaches 38 cm and 106°. The xml
+files are left as ROBOTIS ships them, so the slip can still be reproduced (`--as-is`). Making the
+fix permanent in `turtlebot3_waffle_pi.xml` takes two edits (then `fix_floor_contacts` does
+nothing):
 
 * add `priority="1"` to the two caster `<geom type="sphere" ...>` lines
 * change the chassis collision geom `<geom pos="-0.064 0 0.01" mesh="waffle_pi_base" class="collision"/>`
   to `pos="-0.064 0 0.0122"`
-
-I haven't edited the xml because it's shared. That's for the team to agree.
 
 ### 3.2 The first slalom route clipped a box
 
@@ -370,47 +381,57 @@ each join the arc's speed limit.
 `solvePnP` with `SOLVEPNP_IPPE_SQUARE` sometimes returned NaN while reporting success, and
 without subpixel corner refinement the range read about 2 % long at 1 m. Fixed with a NaN check
 plus fallback solver, and `CORNER_REFINE_SUBPIX`. In the rendered MuJoCo scene the reading is
-then within about 1 % in range and 0.1° in bearing (section 2.1). Both fixes are worth copying
-into `sensing.py`.
+then within about 1 % in range and 0.1° in bearing (section 2.1). Part B's `sensing.py` now
+refines its corners the same way and checks for NaN poses, so the test bench and the pipeline
+read the marker alike (`PART_B_SENSING.md`, "Problems found and fixed").
 
 ## 4. Limits
 
 * The batch results use the fake camera. The rendered-camera trials in section 2.4 are the check
   that it's a fair stand-in. The fake camera also ignores boxes blocking the view, but none of
-  the 3837 camera fixes in 30 MuJoCo trials would have been blocked.
-* The floor-contact fix is mine (section 3.1). It makes the model behave like the real robot, but
-  the team should agree on one robot model.
+  the 11469 camera fixes in the 90 trials of section 2.3 would have been blocked (`blocked_fixes`
+  in `trials_mujoco_synthetic_x30.csv`, a line-of-sight check against every box).
+* The floor-contact fix (section 3.1) makes the simulated robot roll the way its encoders say,
+  as a TurtleBot does on a hard floor. Real slip (carpet, a wet floor, hard braking) isn't
+  modelled, and nothing in the controller detects it.
 * The controller is linear and assumes small errors. Big EKF jumps are handled by the
   curvature-preserving wheel scaling, but nothing re-plans the path after a jump.
 * The plan is timed. If the robot is held up, it falls behind and then hurries to catch up. A
   re-plan, or letting the reference wait for the robot, would fix that.
 * There's no obstacle avoidance in the controller; it trusts the route.
 
-## 5. Plugging it in
+## 5. How the integrated pipeline uses it
+
+The test bench above drives hand-written routes. In the integrated system (`main.py`), Part E's
+LiDAR planner (`part_e_integration/navigation.py`) chooses the waypoints and the same tracker
+follows them:
 
 ```python
-import controller
-ref = controller.docking_reference(waypoints, marker_xy, marker_normal)   # planner output -> plan
-tracker = controller.LQRTracker(ref)
+from part_d_control import controller
+# one straight leg to the next waypoint the A* planner chose
+tracker = controller.LQRTracker(controller.Reference([x_hat[:2], waypoint], final_straight=0.0))
+# at the pre-dock point: the 0.9 m straight approach into the dock
+tracker = controller.LQRTracker(controller.Reference([pre_dock, dock]))
 # every 20 ms, after the EKF update:
 v, w = tracker.step(x_hat, t)
 w_left, w_right, _ = controller.wheel_speeds(v, w)
-data.ctrl[:] = [w_left, w_right]          # real robot: send (v, w) as cmd_vel instead
-if tracker.docked: ...
 ```
 
-* On the real robot only the `data.ctrl` line changes. The TurtleBot's firmware does the wheel
-  mapping, and the scaling has already been applied to (v, w).
-* Once A1 and A4 are filled in `model.py`, `test_controller.py` checks they match mine.
-* The sensor stand-ins in `run_tracking.py` can be swapped for `sensing.py` once `sim.py` exists.
-* There are two scene versions in play. `sensing.py` expects `scene_room.xml` and
-  `robot/tb3_waffle_pi_sensors.xml` (camera at x 0.086 m / z 0.107 m, 0.2 m marker), and
-  neither is in the repo. The repo's `sceneforturtle.xml` has the camera at x 0.07 m / z 0.15 m,
-  and the black square is 0.16 m because the PNG has a white border. Used as-is with
-  `sceneforturtle.xml`, `sensing.py`'s range would read 25 % long.
-* The robot model needs the floor-contact fix (section 3.1), in the xml or at load time.
+* The planner re-plans and starts a new leg when a LiDAR scan blocks the current one, so the
+  plan is followed one leg at a time and the robot stops briefly between legs. The test bench's
+  routes are joined by arcs instead, so its results here describe the controller on smooth
+  routes; Part E reports the integrated system's results.
+* The controller uses Part A's `linear_error_model()` and `body_to_wheels()` (it kept its own
+  copies until Part A was finished; the unit tests checked they agreed).
+* The tracker reports `timeout` if settling at the dock takes longer than 5 s, and only
+  sustained in-tolerance settling reports `docked`.
+* On the real robot only the wheel command changes: the TurtleBot's firmware does the wheel
+  mapping, so the scaled (v, w) would be sent as a velocity command.
+* The floor-contact correction (section 3.1) is applied when the scene loads (`sim.load()`), so
+  every part drives the same, non-slipping robot.
 
 ## Generative AI
 
-Claude (Anthropic) was used to help design, write and test this part. *(Andre: check this
-matches the team's declaration on the project page.)*
+Claude (Anthropic) was used to help design, code and test the controller and the test bench,
+and to write this report. The final re-run of every result in section 2 was also done with
+Claude's help. The team's full declaration is in the repository README.

@@ -5,7 +5,8 @@ Q/R are simulation design values; see PART_C_ESTIMATION.md for tuning evidence.
 """
 
 import numpy as np
-import model
+
+from part_a_modelling import model
 
 Q = np.diag([0.001**2, 0.001**2, np.radians(0.2)**2])  # per 20 ms prediction
 R = np.diag([0.03**2, np.radians(1.0)**2])              # per camera measurement

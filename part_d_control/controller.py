@@ -12,11 +12,19 @@
 #   4. u = u_ref - K e   (feedforward drives the plan, feedback fixes the error)
 #   5. if either wheel would pass its speed limit, slow both by the same factor
 #
-# Unit checks:                 python -m unittest discover -s part_d_control -p test_controller.py -v
+# Quick check, no simulator:   python -m part_d_control.controller
+# Unit checks:                 python -m unittest part_d_control.test_controller -v
+
+import sys
+from pathlib import Path
 
 import numpy as np
 from scipy.linalg import solve_discrete_are
-from model import r, L, W_MAX, linear_error_model, body_to_wheels
+
+if __package__ in (None, ""):  # run as a file, not with -m: let Python find the part_* packages
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from part_a_modelling.model import r, L, W_MAX, linear_error_model, body_to_wheels
 
 DT = 0.02                    # control period (s), matches the EKF's Q
 V_MAX = r * W_MAX            # 0.26 m/s with both wheels flat out
@@ -360,3 +368,54 @@ class LQRTracker:
         self.last = dict(t=t, mode=self.mode, e=e.copy(), v_ref=v_ref, w_ref=w_ref,
                          v=v, w=w, scale=scale)
         return v, w
+
+
+if __name__ == "__main__":
+    np.set_printoptions(precision=4, suppress=True)
+    print(f"top speed {V_MAX:.3f} m/s, wheel limit used {WHEEL_LIMIT:.2f} rad/s")
+
+    for v_ref in (0.0, 0.15):
+        A, B = error_model(v_ref, 0.0)
+        print(f"rank Ctrb at v_ref = {v_ref:.2f}:", np.linalg.matrix_rank(controllability_matrix(A, B)))
+
+    for v_ref, w_ref in ((0.05, 0.0), (0.15, 0.0), (0.115, 0.46)):
+        A, B = error_model(v_ref, w_ref)
+        K, _ = dlqr(A, B, Q_LQR, R_LQR)
+        z = np.linalg.eigvals(A - B @ K)
+        print(f"v_ref {v_ref:g} m/s, w_ref {w_ref:g} rad/s: K =\n{K}\n   |eig(A - BK)| = {np.abs(z)}")
+        assert np.all(np.abs(z) < 1)
+
+    # what one fixed gain (designed for straight driving) costs in the routes' corners:
+    # 0.25 m arcs, driven at 0.115 m/s
+    def slowest_time_constant(A, B, K):
+        return -DT / np.log(np.abs(np.linalg.eigvals(A - B @ K)).max())
+    A, B = error_model(0.115, 0.46)
+    print(f"slowest time constant in a corner: scheduled gain"
+          f" {slowest_time_constant(A, B, GainSchedule().gain(0.115, 0.46)):.2f} s, one fixed gain"
+          f" {slowest_time_constant(A, B, GainSchedule(scheduled=False).gain(0.115, 0.46)):.2f} s")
+
+    # Euler against exact (zero-order hold) discretisation of the same error model
+    from scipy.linalg import expm
+    worst = 0.0
+    for v_ref, w_ref in ((0.05, 0.0), (0.15, 0.0), (0.115, 0.46)):
+        A, B = error_model(v_ref, w_ref)
+        M = np.zeros((5, 5))
+        M[:3, :3], M[:3, 3:] = (A - np.eye(3)) / DT, B / DT     # back to continuous time
+        E = expm(M * DT)
+        K_euler, _ = dlqr(A, B, Q_LQR, R_LQR)
+        K_zoh, _ = dlqr(E[:3, :3], E[:3, 3:], Q_LQR, R_LQR)
+        worst = max(worst, np.abs(K_zoh - K_euler).max() / np.abs(K_euler).max())
+    print(f"exact (zero-order hold) discretisation changes K by at most {100 * worst:.1f} %")
+
+    # drive the LINEAR error model from a 10 cm sideways, 5 deg heading error
+    A, B = error_model(0.15, 0.0)
+    K, _ = dlqr(A, B, Q_LQR, R_LQR)
+    e = np.array([0.0, 0.10, np.radians(5)])
+    for k in range(int(10 / DT)):
+        e = A @ e + B @ (-K @ e)
+    print("error after 10 s on the linear model:", e, " should be ~0")
+
+    ref = docking_reference([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0]], [2.888, 0.0], [-1.0, 0.0])
+    print(f"test reference: {ref.length:.2f} m in {ref.duration:.1f} s,"
+          f" top speed {ref.v.max():.3f} m/s, top turn rate {np.abs(ref.w).max():.3f} rad/s")
+    print("Basic checks passed.")

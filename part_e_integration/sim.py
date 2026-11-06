@@ -1,7 +1,7 @@
-"""Small MuJoCo interface shared by the pipeline and Part B.
+"""Small MuJoCo interface shared by the pipeline, Part A's model check and Part B.
 
-This supplies the missing ``sim`` API. Calibration still needs Dinel's board
-and experiments; loading this scene does not manufacture calibration results.
+load() applies the floor-contact correction from Part D (fix_floor_contacts), so every
+part drives the same robot. truth() and collided() are for evaluation only.
 """
 
 from pathlib import Path
@@ -9,14 +9,19 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-SCENE = Path(__file__).resolve().parent.parent / "robotis_tb3" / "sceneforturtle.xml"
+SCENE = Path(__file__).resolve().parents[1] / "robotis_tb3" / "sceneforturtle.xml"
 CAM_W, CAM_H = 640, 480
 CAM_FOVY_DEG = 60.0
 CONTROL_DT = 0.02
 
 
 def fix_floor_contacts(model, mj=mujoco):
-    """Andre's existing contact correction, applied to the loaded model only."""
+    """Stop the Waffle Pi slipping: Part D's contact correction, applied to the loaded model only.
+
+    The ball casters get contact priority so their frictionless contact is used, and the
+    chassis collision mesh is lifted to 2 mm above the floor, so only wheels and casters
+    touch it (see PART_D_CONTROL.md, section 3.1). The xml files are not changed.
+    """
     base = mj.mj_name2id(model, mj.mjtObj.mjOBJ_BODY, "base")
     for geom in range(model.ngeom):
         if model.geom_bodyid[geom] != base:

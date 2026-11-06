@@ -1,7 +1,6 @@
-# Optional checks for Part C. The robot never imports or runs this file.
-# For a quick example, you can just run ekf.py instead.
-# From the outer project folder, run these more detailed checks with:
-# python -m unittest discover -s part_c_estimation -p test_ekf.py -v
+# Checks for Part C. The robot never imports or runs this file.
+# From the repository root:
+#   python -m unittest part_c_estimation.test_ekf -v
 #
 # unittest runs each test_ method; a failed assertion reports a failed check.
 # assert_allclose compares numbers while allowing small rounding differences.
@@ -11,12 +10,14 @@
 import sys
 import unittest
 from pathlib import Path
+
 import numpy as np
 
-# so the imports below can find the files in the part_* folders
-sys.path[:0] = [str(p) for p in sorted(Path(__file__).resolve().parent.parent.glob("part_*"))]
-import ekf
-import model
+if __package__ in (None, ""):  # run as a file, not with -m: let Python find the part_* packages
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from part_a_modelling import model
+from part_c_estimation import ekf
 
 
 def numerical_jacobian(function, values):

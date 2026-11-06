@@ -8,7 +8,7 @@ import heapq
 
 import numpy as np
 
-import controller
+from part_d_control import controller
 
 CELL = 0.10
 ROOM_HALF_SIZE = 3.0

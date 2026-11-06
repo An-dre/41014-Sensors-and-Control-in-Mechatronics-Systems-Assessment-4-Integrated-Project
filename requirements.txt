@@ -1,6 +1,8 @@
-# Tested with Python 3.10. Install only one OpenCV distribution.
-numpy==1.26.4
-scipy==1.15.3
-matplotlib==3.7.3
-mujoco==3.16.0
-opencv-contrib-python==4.11.0.86
+# Python 3.12 or newer (tested on Python 3.12 and 3.15).
+# Install with:  python -m pip install -r requirements.txt
+# Only install one OpenCV package: opencv-contrib-python already contains opencv-python.
+numpy==2.5.4
+scipy==1.18.1
+matplotlib==3.11.2
+mujoco==3.17.0
+opencv-contrib-python==5.0.0.93

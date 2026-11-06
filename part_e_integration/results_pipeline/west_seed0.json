@@ -2,27 +2,27 @@
   "success": true,
   "status": "docked",
   "collided": false,
-  "time": 78.72,
-  "odometry_position_rmse": 0.009865456308648825,
-  "cross_track_rmse": 0.005656502424344678,
-  "wheel_command_rms": 2.531337601517429,
-  "dock_along": 0.0021743975063417,
-  "dock_side": 0.00047022994912914216,
-  "dock_heading_deg": -0.3092458652507393,
-  "ekf_position_rmse": 0.015080530257716995,
-  "heading_rmse_deg": 0.29806007947936153,
-  "mean_nees": 2.3271557685598223,
-  "coverage_x": 0.7665735331470663,
+  "time": 77.48,
+  "odometry_position_rmse": 0.00975738317677468,
+  "cross_track_rmse": 0.005097616957548974,
+  "wheel_command_rms": 2.5858031103946204,
+  "dock_along": 0.0024119596135555345,
+  "dock_side": 0.0002918183969792028,
+  "dock_heading_deg": -0.2708757807126492,
+  "ekf_position_rmse": 0.00876265662706714,
+  "heading_rmse_deg": 0.21759339718768983,
+  "mean_nees": 0.5032593062689901,
+  "coverage_x": 1.0,
   "coverage_y": 1.0,
   "coverage_heading": 1.0,
-  "mean_nis_all": 0.5445820594330266,
+  "mean_nis_all": 0.044069652556561464,
   "seed": 0,
   "start": "west",
   "replans": 10,
-  "camera_accepted": 431,
-  "camera_rejected": 9,
+  "camera_accepted": 372,
+  "camera_rejected": 1,
   "camera_invalid": 0,
-  "calibrated": false,
+  "calibrated": true,
   "wheel_gain": [
     1.0,
     1.0
@@ -32,9 +32,12 @@
     -1.0
   ],
   "placement_noise": false,
+  "placement_scale": 1.0,
+  "lidar_noise_scale": 1.0,
+  "encoder_noise_scale": 1.0,
   "sensor_rejects": {
     "wrong_id": 0,
-    "too_small": 282,
+    "too_small": 275,
     "pnp_failed": 0,
     "bad_range": 0
   },
@@ -67,5 +70,6 @@
       0.00030461741978670857
     ]
   ],
-  "measurement_noise_source": "simulation design prior"
+  "measurement_noise_source": "Part C design R",
+  "calibration_source": "part_b_sensing/results_part_b/calib.npz"
 }
